@@ -102,17 +102,68 @@ void MainWindow::processSingleFrame()
     this->setCameraImage(cameraImage);
 
     //hier müssen Sie Ihren code einbauen
-
-
-
-
     cv::Mat debugImage = cameraImage.clone();
+/*
+    cv::Mat img_gray;
+    cv::cvtColor(debugImage, img_gray, cv::COLOR_BGR2GRAY);
+    cv::Mat templateImage = cv::imread("/home/lluks/semester_6/Bildverarbeuitungslabor/abschlussproject/template.png", 0);
+    int width = templateImage.cols;
+    int height = templateImage.rows;
+    cv::Mat res;
+    cv::matchTemplate(img_gray, templateImage, res, cv::TM_CCOEFF_NORMED);
+    double threshold = 0.8;
 
-    //bearbeiten Sie das debug bild wie sie wollen
-    cv::Point *first= new cv::Point(0,0);
-    cv::Point *second= new cv::Point(511,511);
-    cv::line(debugImage,*first,*second,(255,0,0),5);
+    //std::vector<cv::Point> data;
+    for (int y=0; y < res.rows; y++) {
+        for (int x=0; x < res.cols; x++) {
+            if(res.at<uchar>(x, y) >= threshold){
+                //cv::Point newPoint = cv::Point(x,y);
+                //data.push_back(newPoint);
+                //std::cout << x << ", " << y << "\n";
+                cv::rectangle(debugImage, cv::Rect(x, y, width,  height), (0,0,255), 5);
+            }
+        }
+    }
+*/
+    //bearbeiten Sie das debug bild wie sie wollen;
 
+    cv::Mat templateImage = cv::imread("/home/lluks/semester_6/Bildverarbeuitungslabor/abschlussproject/template.png", 0);
+    int width = templateImage.cols;
+    int height = templateImage.rows;
+    cv::Mat img = debugImage.clone();
+    cv::cvtColor(debugImage, img, cv::COLOR_BGR2GRAY);
+    // Apply template Matching
+    cv::Mat res;
+    cv::matchTemplate(img,templateImage,res,cv::TM_CCOEFF_NORMED);
+    double min_val=0;
+    double max_val=0;
+    cv::Point min_loc;
+    cv::Point max_loc;
+    cv::minMaxLoc(res, &min_val, &max_val, &min_loc, &max_loc);
+    cv::Point top_left = max_loc;
+    double bottom_right = (top_left.x + width, top_left.y + height);
+    cv::rectangle(debugImage, cv::Rect(top_left.x, top_left.y, width,  height), (0,0,255), 5);
+
+/*
+    cv::Mat templ; cv::Mat result;
+    int match_method = cv::TM_CCOEFF_NORMED;
+    templ = imread( "/home/lluks/semester_6/Bildverarbeuitungslabor/abschlussproject/sam.png", cv::IMREAD_COLOR );
+    int result_cols = debugImage.cols - templ.cols + 1;
+    int result_rows = debugImage.rows - templ.rows + 1;
+    result.create( result_rows, result_cols, CV_32FC1 );
+    matchTemplate( debugImage, templ, result, match_method);
+    normalize( result, result, 0, 1, cv::NORM_MINMAX, -1, cv::Mat() );
+    double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
+    cv::Point matchLoc;
+    minMaxLoc( result, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );
+    if( match_method  == cv::TM_SQDIFF || match_method == cv::TM_SQDIFF_NORMED ){
+        matchLoc = minLoc;
+    }
+    else{
+        matchLoc = maxLoc;
+    }
+    rectangle(result, matchLoc, cv::Point( matchLoc.x + templ.cols , matchLoc.y + templ.rows ), cv::Scalar::all(0), 2, 8, 0 );
+*/
     this->setDebugImage(debugImage);
 
     //sie können auch rechtecke oder linien direkt ins bild reinmalden
