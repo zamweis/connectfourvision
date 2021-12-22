@@ -126,13 +126,27 @@
     <item row="2" column="0" colspan="2">
      <widget class="QGroupBox" name="groupBox_4">
       <property name="title">
-       <string>Custom Controls</string>
+       <string>Game Stats</string>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
+        <widget class="QLabel" name="label_red">
+         <property name="text">
+          <string>red won 0 rounds</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>Hier können Sie extra controls einfügen.</string>
+          <string>yellow won 0 rounds</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_reset">
+         <property name="text">
+          <string>Reset Game</string>
          </property>
         </widget>
        </item>
@@ -147,7 +161,7 @@
      <x>0</x>
      <y>0</y>
      <width>849</width>
-     <height>21</height>
+     <height>19</height>
     </rect>
    </property>
   </widget>
