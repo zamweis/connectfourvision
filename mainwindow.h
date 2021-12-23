@@ -3,7 +3,8 @@
 
 #include <QMainWindow>
 #include <QTimer>
-#include </usr/local/include/opencv4/opencv2/opencv.hpp>
+//#include </usr/local/include/opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
 
