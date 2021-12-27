@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     mPixmapDebug = mSceneDebug.addPixmap(QPixmap());
 
     //wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
-    mCameraStream.open(0);
+    mCameraStream.open(1);
 
     start();
 }
@@ -107,31 +107,46 @@ void MainWindow::processSingleFrame()
     //bearbeiten Sie das debug bild wie sie wollen;
 
     // load templateImage
-    cv::Mat templateImage = cv::imread("/home/lluks/QT/bildverarbeitung/template.png", 0);
-    int width = templateImage.cols;
-    int height = templateImage.rows;
+    cv::Mat templateImageY = cv::imread("..\\bildverarbeitung\\templateG.png", 0);
+    cv::Mat templateImageR = cv::imread("..\\bildverarbeitung\\templateR.png", 0);
+    int width = templateImageY.cols;
+    int height = templateImageY.rows;
 
     // Apply template Matching
-    cv::Mat res_32f(debugImage.rows - height + 1, debugImage.cols - width + 1, CV_32FC1);
+    cv::Mat res_32fY(debugImage.rows-height +1 , debugImage.cols-width +1 , CV_32FC1);
+    cv::Mat res_32fR(debugImage.rows-height +1 , debugImage.cols-width +1, CV_32FC1);
     cv::cvtColor(debugImage, debugImage, cv::COLOR_BGR2GRAY);
-    cv::matchTemplate(debugImage,templateImage,res_32f,cv::TM_CCOEFF_NORMED);
+    //yellow
+    cv::matchTemplate(debugImage,templateImageY,res_32fY,cv::TM_CCOEFF_NORMED);
+    //red
+    cv::matchTemplate(debugImage,templateImageR,res_32fR,cv::TM_CCOEFF_NORMED);
 
     // Apply threshold
     int size = ((width + height) / 4) * 2 + 1; //force size to be odd
-    cv::Mat res;
-    res_32f.convertTo(res, CV_8U, 255.0);
-    cv::adaptiveThreshold(res, res, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, size, -128);
+    cv::Mat resY, resR;
+    //yellow
+    res_32fY.convertTo(resY, CV_8U, 255.0);
+    //red
+    res_32fR.convertTo(resR, CV_8U, 255.0);
+    cv::adaptiveThreshold(resY, resY, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, size, -128);
+    cv::adaptiveThreshold(resR, resR, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, size, -128);
 
     // draw rectangle around matches and mark current matche as drawn
     while (true) {
-        double minval, maxval, threshold = 0.8;
-        cv::Point minloc, maxloc;
-        cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
-
-        if (maxval >= threshold){
-            cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, width,  height), (0,0,255), 5);
-            cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
+        double minvalY, maxvalY, minvalR, maxvalR, threshold = 0.8;
+        cv::Point minlocY, maxlocY, minlocR, maxlocR;
+        cv::minMaxLoc(resY, &minvalY, &maxvalY, &minlocY, &maxlocY);
+        cv::minMaxLoc(resR, &minvalR, &maxvalR, &minlocR, &maxlocR);
+        //yellow
+        if (maxvalY >= threshold){
+            cv::rectangle(cameraImage, cv::Rect(maxlocY.x, maxlocY.y, width, height),(0,0,255), 5);
+            cv::floodFill(resY, maxlocY, 0); //mark drawn blob, important!
         }
+        //red
+        if(maxvalR >= threshold){
+           cv::rectangle(cameraImage, cv::Rect(maxlocR.x, maxlocR.y, width, height),(0,255,0), 5);
+            cv::floodFill(resR, maxlocR, 0); //mark drawn blob, important!
+       }
         else
             break;
     }
