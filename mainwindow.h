@@ -3,8 +3,8 @@
 
 #include <QMainWindow>
 #include <QTimer>
-#include </usr/local/include/opencv4/opencv2/opencv.hpp>
-//#include <opencv2/opencv.hpp>
+//#include </usr/local/include/opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
 
@@ -42,6 +42,8 @@ private:
 
     void setCameraImage(cv::Mat image);
     void setDebugImage(cv::Mat image);
+    void colorDetection(std::array<cv::Point, 7*6 >arr,cv::Mat image);
+    void matchFields(cv::Mat debugImage, cv::Mat cameraImage);
 
 public slots:
 

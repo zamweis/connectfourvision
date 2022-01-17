@@ -7,6 +7,9 @@
 #include <opencv2/core/types.hpp>
 
 
+std::array<cv::Point, 7*6> filds;
+int arraySet = 0;
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -30,8 +33,8 @@ MainWindow::MainWindow(QWidget *parent)
     //wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
     //mCameraStream.open(1);
     mCameraStream = cv::VideoCapture("..\\bildverarbeitung\\testvideo.mp4");
-
     start();
+
 }
 
 
@@ -90,6 +93,77 @@ void MainWindow::setDebugImage(cv::Mat image)
     ui->graphicsView_debug->fitInView(0,0, image.cols, image.rows, Qt::AspectRatioMode::KeepAspectRatio);
 }
 
+
+void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage){
+
+    //bearbeiten Sie das debug bild wie sie wollen;
+
+    // load templateImage
+    cv::Mat templateImage = cv::imread("..\\bildverarbeitung\\template.png", 0);
+    int width = templateImage.cols;
+    int height = templateImage.rows;
+
+    // Apply template Matching
+    cv::Mat res_32f(debugImage.rows-height +1 , debugImage.cols-width +1 , CV_32FC1);
+    cv::cvtColor(debugImage, debugImage, cv::COLOR_BGR2GRAY);
+
+    cv::matchTemplate(debugImage,templateImage,res_32f,cv::TM_CCOEFF_NORMED);
+
+    // Apply threshold
+    int size = ((width + height) / 4) * 2 + 1; //force size to be odd
+    cv::Mat res;
+
+    res_32f.convertTo(res, CV_8U, 255.0);
+    cv::adaptiveThreshold(res, res, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, size, -128);
+
+    // draw rectangle around matches and mark current matche as drawn
+    int counter = 0;
+    while (true) {
+        double minval, maxval, threshold = 0.8;
+        cv::Point minloc, maxloc;
+        cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
+
+        if(maxval >= threshold){
+            cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, width, height),(0,255,0), 5);
+            cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
+            filds.at(counter).x = maxloc.x/ width;
+            filds.at(counter).y = maxloc.y/ height;
+            counter++;
+       }
+        else
+            break;
+    }
+    arraySet = 1;
+}
+
+void MainWindow::colorDetection(std::array<cv::Point, 7*6 >arr,cv::Mat image){
+    std::array<int, 7*6 > colorArray;
+    int r,y,b;
+
+    for (int i = 0; i < arr.size(); i++){
+        //Blue
+        b = image.at<cv::Vec3b>(arr[i].x, arr[i].y)[0];
+        //Yellow
+        y = image.at<cv::Vec3b>(arr[i].x, arr[i].y)[1];
+        //Red
+        r = image.at<cv::Vec3b>(arr[i].x, arr[i].y)[2];
+
+        std::cout<<"blue: " <<b<<" red: " << r<< " yellow: " <<y <<std::endl;
+
+        if (b >= y && b >= r){
+        colorArray[i] = 0; // blau
+        }
+        if(y >= b && y >= r){
+            colorArray[i] = 1; // gelb // at the momentt blue
+        }
+        if(r >= b && r >= y){
+            colorArray[i] = 2; // rot
+        }
+        std::cout<<colorArray[i] <<std::endl;
+    }
+
+}
+
 void MainWindow::processSingleFrame()
 {
     QElapsedTimer measureTime;
@@ -126,13 +200,16 @@ void MainWindow::processSingleFrame()
     cv::adaptiveThreshold(res, res, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, size, -128);
 
     // draw rectangle around matches and mark current matche as drawn
+    if(arraySet == 0){
+        matchFields(cameraImage, cameraImage);
+    }
     while (true) {
         double minval, maxval, threshold = 0.8;
         cv::Point minloc, maxloc;
         cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
 
         if(maxval >= threshold){
-           cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, width, height),(0,255,0), 5);
+            cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, width, height),(0,255,0), 5);
             cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
        }
         else
@@ -140,8 +217,14 @@ void MainWindow::processSingleFrame()
     }
 
 
-    this->setDebugImage(cameraImage);
+//        std::cout<< filds.size() << std::endl;
+//        for(int x = 0; x < filds.size(); x++){
+//            std::cout<< filds[x].x << std::endl;
+//            std::cout<< filds[x].y << std::endl;
+//        }
+    //colorDetection(filds, cameraImage);
 
+    this->setDebugImage(cameraImage);
     //sie können auch rechtecke oder linien direkt ins bild reinmalden
 
     //mSceneCamera.addItem(QGraphicsRectItem(...));
