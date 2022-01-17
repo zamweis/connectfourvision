@@ -7,7 +7,7 @@
 #include <opencv2/core/types.hpp>
 
 
-std::array<cv::Point, 7*6> filds;
+std::vector<cv::Point> filds(7*6);
 int arraySet = 0;
 
 MainWindow::MainWindow(QWidget *parent)
@@ -93,6 +93,18 @@ void MainWindow::setDebugImage(cv::Mat image)
     ui->graphicsView_debug->fitInView(0,0, image.cols, image.rows, Qt::AspectRatioMode::KeepAspectRatio);
 }
 
+// use this to sort the points
+// not finish
+struct myclass{
+    bool operator()(cv::Point pt1, cv::Point pt2){
+        if (pt1.x != pt2.x){
+            return (pt1.x < pt2.x);
+        }
+        if(pt1.x == pt2.x){
+            return (pt1.y < pt2.y);
+        }
+    }
+} myobject;
 
 void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage){
 
@@ -126,18 +138,24 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage){
         if(maxval >= threshold){
             cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, width, height),(0,255,0), 5);
             cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
-            filds.at(counter).x = maxloc.x/ width;
-            filds.at(counter).y = maxloc.y/ height;
+            filds[counter].x = maxloc.x/ width;
+            filds[counter].y = maxloc.y/ height;
             counter++;
        }
         else
             break;
     }
     //TOO: soertieren
+    std::sort(filds.begin(), filds.end(), myobject);
+
+    for(int x = 0; x < filds.size(); x++){
+        std::cout<<"x: " <<filds[x].x;
+        std::cout<<" y: "<<filds[x].y << std::endl;
+    }
     arraySet = 1;
 }
 
-void MainWindow::colorDetection(std::array<cv::Point, 7*6 >arr,cv::Mat image){
+void MainWindow::colorDetection(std::vector<cv::Point>arr,cv::Mat image){
     std::array<int, 7*6 > colorArray;
     int r,y,b;
 
