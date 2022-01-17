@@ -7,7 +7,7 @@
 #include <opencv2/core/types.hpp>
 
 
-std::vector<cv::Point> filds(7*6);
+std::vector<cv::Point> fields(7*6);
 int arraySet = 0;
 
 MainWindow::MainWindow(QWidget *parent)
@@ -94,7 +94,6 @@ void MainWindow::setDebugImage(cv::Mat image)
 }
 
 // use this to sort the points
-// not finish
 struct myclass{
     bool operator()(cv::Point pt1, cv::Point pt2){
         if (pt1.x != pt2.x){
@@ -138,19 +137,19 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage){
         if(maxval >= threshold){
             cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, width, height),(0,255,0), 5);
             cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
-            filds[counter].x = maxloc.x;
-            filds[counter].y = maxloc.y;
+            fields[counter].x = maxloc.x;
+            fields[counter].y = maxloc.y;
             counter++;
        }
         else
             break;
     }
-    //TOO: soertieren
-    std::sort(filds.begin(), filds.end(), myobject);
+    //sort
+    std::sort(fields.begin(), fields.end(), myobject);
 
-    for(int x = 0; x < filds.size(); x++){
-        std::cout<<"x: " <<filds[x].x;
-        std::cout<<" y: "<<filds[x].y << std::endl;
+    for(int x = 0; x < fields.size(); x++){
+        std::cout<<"x: " <<fields[x].x;
+        std::cout<<" y: "<<fields[x].y << std::endl;
     }
     arraySet = 1;
 }
@@ -159,7 +158,7 @@ void MainWindow::colorDetection(std::vector<cv::Point>arr,cv::Mat image){
     std::array<int, 7*6 > colorArray;
     int r,y,b;
 
-    for (int i = 0; i < arr.size(); i++){
+    for (int i = 0; i < 30 ; i++){
         //Blue
         b = image.at<cv::Vec3b>(arr[i].x, arr[i].y)[0];
         //Yellow
@@ -179,9 +178,8 @@ void MainWindow::colorDetection(std::vector<cv::Point>arr,cv::Mat image){
             colorArray[i] = 2; // rot
         }
 
-        if(colorArray[i] != 1){
         std::cout<<colorArray[i] <<std::endl;
-        }
+
     }
 
 }
@@ -216,7 +214,7 @@ void MainWindow::processSingleFrame()
 //            std::cout<< filds[x].y << std::endl;
 //        }
 
-    //colorDetection(filds, cameraImage);
+    colorDetection(fields, cameraImage);
 
     this->setDebugImage(cameraImage);
     //sie können auch rechtecke oder linien direkt ins bild reinmalden
