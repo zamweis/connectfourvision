@@ -133,6 +133,7 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage){
         else
             break;
     }
+    //TOO: soertieren
     arraySet = 1;
 }
 
@@ -148,7 +149,7 @@ void MainWindow::colorDetection(std::array<cv::Point, 7*6 >arr,cv::Mat image){
         //Red
         r = image.at<cv::Vec3b>(arr[i].x, arr[i].y)[2];
 
-        std::cout<<"blue: " <<b<<" red: " << r<< " yellow: " <<y <<std::endl;
+        //std::cout<<"blue: " <<b<<" red: " << r<< " yellow: " <<y <<std::endl;
 
         if (b >= y && b >= r){
         colorArray[i] = 0; // blau
@@ -159,10 +160,14 @@ void MainWindow::colorDetection(std::array<cv::Point, 7*6 >arr,cv::Mat image){
         if(r >= b && r >= y){
             colorArray[i] = 2; // rot
         }
+
+        if(colorArray[i] != 1){
         std::cout<<colorArray[i] <<std::endl;
+        }
     }
 
 }
+
 
 void MainWindow::processSingleFrame()
 {
@@ -181,39 +186,8 @@ void MainWindow::processSingleFrame()
 
     //bearbeiten Sie das debug bild wie sie wollen;
 
-    // load templateImage
-    cv::Mat templateImage = cv::imread("..\\bildverarbeitung\\template.png", 0);
-    int width = templateImage.cols;
-    int height = templateImage.rows;
-
-    // Apply template Matching
-    cv::Mat res_32f(debugImage.rows-height +1 , debugImage.cols-width +1 , CV_32FC1);
-    cv::cvtColor(debugImage, debugImage, cv::COLOR_BGR2GRAY);
-
-    cv::matchTemplate(debugImage,templateImage,res_32f,cv::TM_CCOEFF_NORMED);
-
-    // Apply threshold
-    int size = ((width + height) / 4) * 2 + 1; //force size to be odd
-    cv::Mat res;
-
-    res_32f.convertTo(res, CV_8U, 255.0);
-    cv::adaptiveThreshold(res, res, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, size, -128);
-
-    // draw rectangle around matches and mark current matche as drawn
     if(arraySet == 0){
         matchFields(cameraImage, cameraImage);
-    }
-    while (true) {
-        double minval, maxval, threshold = 0.8;
-        cv::Point minloc, maxloc;
-        cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
-
-        if(maxval >= threshold){
-            cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, width, height),(0,255,0), 5);
-            cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
-       }
-        else
-            break;
     }
 
 
@@ -222,7 +196,8 @@ void MainWindow::processSingleFrame()
 //            std::cout<< filds[x].x << std::endl;
 //            std::cout<< filds[x].y << std::endl;
 //        }
-    //colorDetection(filds, cameraImage);
+
+    colorDetection(filds, cameraImage);
 
     this->setDebugImage(cameraImage);
     //sie können auch rechtecke oder linien direkt ins bild reinmalden
