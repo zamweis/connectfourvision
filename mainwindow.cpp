@@ -138,8 +138,8 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage){
         if(maxval >= threshold){
             cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, width, height),(0,255,0), 5);
             cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
-            filds[counter].x = maxloc.x/ width;
-            filds[counter].y = maxloc.y/ height;
+            filds[counter].x = maxloc.x;
+            filds[counter].y = maxloc.y;
             counter++;
        }
         else
@@ -173,7 +173,7 @@ void MainWindow::colorDetection(std::vector<cv::Point>arr,cv::Mat image){
         colorArray[i] = 0; // blau
         }
         if(y >= b && y >= r){
-            colorArray[i] = 1; // gelb // at the momentt blue
+            colorArray[i] = 1; // gelb
         }
         if(r >= b && r >= y){
             colorArray[i] = 2; // rot
@@ -216,7 +216,7 @@ void MainWindow::processSingleFrame()
 //            std::cout<< filds[x].y << std::endl;
 //        }
 
-    colorDetection(filds, cameraImage);
+    //colorDetection(filds, cameraImage);
 
     this->setDebugImage(cameraImage);
     //sie können auch rechtecke oder linien direkt ins bild reinmalden
