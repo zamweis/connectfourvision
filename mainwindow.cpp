@@ -186,10 +186,11 @@ void MainWindow::processSingleFrame()
 
     //bearbeiten Sie das debug bild wie sie wollen;
 
+    // only at the first time
     if(arraySet == 0){
+        //hopefully thats the right points ...
         matchFields(cameraImage, cameraImage);
     }
-
 
 //        std::cout<< filds.size() << std::endl;
 //        for(int x = 0; x < filds.size(); x++){
