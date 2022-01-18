@@ -136,31 +136,32 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
 }
 
 void MainWindow::colorDetection(cv::Mat image) {
-    std::array<int, 7 * 6> colorArray;
-    int r, y, b;
-    for (int i = 0; i < fields.size(); i++) {
-        //Blue
-        b = image.at<cv::Vec3b>(fields[i].x, fields[i].y)[0];
-        //Yellow
-        y = image.at<cv::Vec3b>(fields[i].x, fields[i].y)[1];
-        //Red
-        r = image.at<cv::Vec3b>(fields[i].x, fields[i].y)[2];
+    // convert image to hsv for better color-detection
+    cv::Mat img_hsv;
+    cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
 
-        //std::cout<<"blue: " <<b<<" red: " << r<< " yellow: " <<y <<std::endl;
+    // Gen lower mask (0-5) and upper mask (175-180) of RED
+    cv::Mat maskR, maskY, mask1, mask2;
+    cv::inRange(img_hsv, cv::Scalar(0, 50, 20), cv::Scalar(5, 255, 255), mask1);
+    cv::inRange(img_hsv, cv::Scalar(175, 50, 20), cv::Scalar(180, 255, 255), mask2);
+    // Merge the masks
+    cv::bitwise_or(mask1, mask2, maskR);
+    // show red pixels
+     cv::imshow("redMask", maskR);
 
-        if (b >= y && b >= r) {
-            colorArray[i] = 0; // blau
-        }
-        if (y >= b && y >= r) {
-            colorArray[i] = 1; // gelb
-        }
-        if (r >= b && r >= y) {
-            colorArray[i] = 2; // rot
-        }
-
-        //std::cout<<colorArray[i] <<std::endl;
-    }
-
+    // HUE for YELLOW is 21-30.
+    int lowH = 21;
+    int highH = 30;
+    // Saturation
+    int lowS = 190;
+    int highS = 255;
+    // Value
+    int lowV = 20;
+    int highV = 255;
+    // Adjust Saturation and Value depending on the lighting condition of the environment
+    cv::inRange(img_hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), maskY);
+    // show yellow pixels
+     cv::imshow("yellowMask", maskY);
 }
 
 
@@ -193,10 +194,8 @@ void MainWindow::processSingleFrame() {
         std::cout << filds[x].y << std::endl;
     }
     */
-    matchFields(cameraImage, cameraImage);
-    //colorDetection(cameraImage);
-    ui->label_red->setText(QString::number(100) + " coins");
-    ui->label_4->setText(QString::number(100) + " coins");
+    //matchFields(cameraImage, cameraImage);
+    colorDetection(cameraImage); // stack smashing
 
     this->setDebugImage(cameraImage);
     //sie können auch rechtecke oder linien direkt ins bild reinmalden
