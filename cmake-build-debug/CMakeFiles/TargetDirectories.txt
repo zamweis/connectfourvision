@@ -1,4 +1,0 @@
-/home/lluks/semester_6/Bildverarbeuitungslabor/bildverarbeitung/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/lluks/semester_6/Bildverarbeuitungslabor/bildverarbeitung/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/lluks/semester_6/Bildverarbeuitungslabor/bildverarbeitung/cmake-build-debug/CMakeFiles/bildverarbeitung.dir
-/home/lluks/semester_6/Bildverarbeuitungslabor/bildverarbeitung/cmake-build-debug/CMakeFiles/bildverarbeitung_autogen.dir
