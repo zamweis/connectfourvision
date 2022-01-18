@@ -42,7 +42,7 @@ private:
 
     void setCameraImage(cv::Mat image);
     void setDebugImage(cv::Mat image);
-    void colorDetection(std::vector<cv::Point>arr,cv::Mat image);
+    void colorDetection(cv::Mat image);
     void matchFields(cv::Mat debugImage, cv::Mat cameraImage);
 
 public slots:

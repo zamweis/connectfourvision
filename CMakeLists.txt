@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 2.8)
+project( bildverarbeitung )
+# To automatically run MOC when building(Meta Object Compiler)
+set(CMAKE_AUTOMOC ON)
+
+# To automatically run UIC when building(User Interface Compiler)
+set(CMAKE_AUTOUIC ON)
+
+# To automatically run RCC when building(Resource Compiler)
+set(CMAKE_AUTORCC ON)
+find_package( OpenCV REQUIRED )
+find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( bildverarbeitung mainwindow.ui mainwindow.cpp main.cpp)
+target_link_libraries(bildverarbeitung Qt5::Core Qt5::Gui Qt5::Widgets ${OpenCV_LIBS})
