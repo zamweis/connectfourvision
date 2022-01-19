@@ -135,8 +135,11 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
         } else
             break;
     }
-    // sort
-    std::sort(fields.begin(), fields.end(), myobject);
+    // sort with inaccuracy
+    std::sort(fields.begin(), fields.end(), myobject2);
+    for (int i = 0; i < 6; ++i) {
+        std::sort(fields.begin()+i*7, fields.begin()+i*7+7, myobject);
+    }
 
     // print coordinates of all fields
     // std::cout << fields << std::endl;
