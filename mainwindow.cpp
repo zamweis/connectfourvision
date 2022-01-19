@@ -174,6 +174,7 @@ void MainWindow::colorDetection(cv::Mat image) {
 
     // fill 2d-vector with coins
     int position = 41;
+    coins.clear();
     coins.resize(6, std::vector<int>(7, 0));
     redCoins = 0;
     yellowCoins = 0;
@@ -181,21 +182,18 @@ void MainWindow::colorDetection(cv::Mat image) {
     for (int j = 5; j >= 0; j--) {
         for (int i = 6; i >= 0; i--) {
             //std::cout << "position: " << position << std::endl;
-
             // red coins
-            if (maskR.at<uchar>(fields[position]) == 255) {
+            if (maskR.at<uchar>(fields[position]) == 255 && coins[j][i] == 0) {
                 // this pixel is white in mask -> red on the src-image
-                if (j == 5 && coins[j][i] == 0) {
+                if (j == 5) {
                     // check if j the lowest level
                     coins[j][i] = 1;
                     redCoins++;
-                    break;
                     //std::cout << "coin red set at(" << j << "," << i << ")" << std::endl;
-                } else if (j < 5 && coins[j + 1][i] != 0 && coins[j][i] == 0) {
+                } else if (j < 5 && coins[j + 1][i] != 0) {
                     // check if field underneath (j+1) has already a coin
                     coins[j][i] = 1;
                     redCoins++;
-                    break;
                     //std::cout << "coin red set at(" << j << "," << i << ")" << std::endl;
                 }
             }
@@ -203,17 +201,16 @@ void MainWindow::colorDetection(cv::Mat image) {
             // yellow coins
             if (maskY.at<uchar>(fields[position]) == 255 && coins[j][i] == 0) {
                 // this pixel is white in mask -> yellow on the src-image
+
                 if (j == 5) {
                     // check if j the lowest level
                     coins[j][i] = 2;
                     yellowCoins++;
-                    break;
                     //std::cout << "coin yellow set at(" << j << "," << i << ")" << std::endl;
                 } else if (j < 5 && coins[j + 1][i] && coins[j][i] == 0) {
                     // check if field underneath (j+1) has already a coin
                     coins[j][i] = 2;
                     yellowCoins++;
-                    break;
                     //std::cout << "coin yellow set at(" << j << "," << i << ")" << std::endl;
                 }
             }
