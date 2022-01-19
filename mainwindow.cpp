@@ -8,7 +8,10 @@
 
 
 std::vector<cv::Point> fields;
+std::vector<std::vector<int>> coins;
 int arraySet = 0;
+int redCoins = 0;
+int yellowCoins = 0;
 
 // load templateImage
 cv::Mat templateImage = cv::imread("template.png", 0);
@@ -90,16 +93,19 @@ void MainWindow::setDebugImage(cv::Mat image) {
 // use this to sort the points
 struct myclass {
     bool operator()(cv::Point pt1, cv::Point pt2) {
-        if (pt1.x != pt2.x) {
-            return (pt1.x < pt2.x);
-        }
-        if (pt1.x == pt2.x) {
-            return (pt1.y < pt2.y);
-        }
+        return (pt1.x < pt2.x);
     }
 } myobject;
 
+
+// use this to sort the points
+struct myclass2 {
+    bool operator()(cv::Point pt1, cv::Point pt2) {
+       return pt1.y < pt2.y;
+    }
+} myobject2;
 void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
+
     // empty vector
     fields.clear();
 
@@ -125,10 +131,11 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
             cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
             // add matches to vector
             fields.push_back(cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius));
+            cv::circle(cameraImage, cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius), 40, (255, 255, 125), 4);
         } else
             break;
     }
-    //sort
+    // sort
     std::sort(fields.begin(), fields.end(), myobject);
 
     // print coordinates of all fields
@@ -137,17 +144,16 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
 
 void MainWindow::colorDetection(cv::Mat image) {
     // convert image to hsv for better color-detection
-    cv::Mat img_hsv;
+    cv::Mat img_hsv, maskR, maskY, mask1, mask2;
     cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
 
     // Gen lower mask (0-5) and upper mask (175-180) of RED
-    cv::Mat maskR, maskY, mask1, mask2;
     cv::inRange(img_hsv, cv::Scalar(0, 50, 20), cv::Scalar(5, 255, 255), mask1);
     cv::inRange(img_hsv, cv::Scalar(175, 50, 20), cv::Scalar(180, 255, 255), mask2);
     // Merge the masks
     cv::bitwise_or(mask1, mask2, maskR);
     // show red pixels
-     cv::imshow("redMask", maskR);
+    // cv::imshow("redMask", maskR);
 
     // HUE for YELLOW is 21-30.
     int lowH = 21;
@@ -161,9 +167,103 @@ void MainWindow::colorDetection(cv::Mat image) {
     // Adjust Saturation and Value depending on the lighting condition of the environment
     cv::inRange(img_hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), maskY);
     // show yellow pixels
-     cv::imshow("yellowMask", maskY);
+
+    // TODO: field needs to have 6*7 entries to set the coins correctly
+    // fill 2d-vector with coins
+    int position = 0;
+    std::cout << fields << std::endl;
+    //std::cout << fields.size() << std::endl;
+    //std::cout << "maskSize: " << maskY.size << std::endl;
+    //std::cout << "imgSize: " << image.size << std::endl;
+    coins.resize(6, std::vector<int>(7, 0));
+
+    for (int j = 0; j < 6; ++j) {
+        position += j;
+        for (int i = 0; i < 7 && position < 42; ++i) {
+            //std::cout << "position: " << position << std::endl;
+            //std::cout << "i,j: " << i << ", " << j << std::endl;
+            // red coins
+            //std::cout << "maskR.at(position)=" << maskR.at<float>(fields[position].x, fields[position].y) << std::endl;
+            if ( maskR.at<int>(fields[position].x, fields[position].y) == 255){
+                // this pixel is white in mask -> red on the src-image
+                //std::cout << maskR.at<cv::Scalar>(fields[position].x, fields[position].y) << std::endl;
+                coins[j][i] = 1;
+                std::cout << "coin red set" << std::endl;
+                redCoins++;
+            }
+            // yellow coins
+            // this pixel is white in mask -> yellow on the src-image
+            if ( maskR.at<int>(fields[position].x, fields[position].y) == 255){
+                //std::cout << maskR.at<cv::Scalar>(fields[position].x, fields[position].y) << std::endl;
+                coins[j][i] = 2;
+                std::cout << "coin yellow set" << std::endl;
+                yellowCoins++;
+            }
+
+            position++;
+        }
+    }
+    for (int i = 0; i < fields.size(); ++i) {
+        std::ostringstream convert;
+        convert << i;
+        cv::putText(maskR, convert.str() ,cv::Point(fields[i].x, fields[i].y), cv::FONT_HERSHEY_DUPLEX, 1.0, 125);
+        cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
+    }
+
+    cv::imshow("yellowMask", maskY);
+    cv::imshow("redMask", maskR);
+    cv::waitKey(0);
+    ui->label_yellow->setText(QString::number(yellowCoins) + " coins set");
+    ui->label_red->setText(QString::number(redCoins) + " coins set");
 }
 
+// return 0 if no win, 1 if red won, 2 if yellow won
+int MainWindow::checkWin() {
+    int boardHeight = 6;
+    int boardWidth = 7;
+
+    // check horizontal spaces
+    for (int y = 0; y < boardHeight; ++y) {
+        for (int x = 0; x < boardWidth - 3; ++x) {
+            if (coins[x][y] == coins[x + 1][y] == coins[x + 2][y] == coins[x + 3][y]) {
+                if (coins[x][y] == 1 || coins[x][y] == 2) {
+                    return coins[x][y];
+                }
+            }
+        }
+    }
+    // check vertical spaces
+    for (int x = 0; x < boardWidth; ++x) {
+        for (int y = 0; y < boardHeight - 3; ++y) {
+            if (coins[x][y] == coins[x][y + 1] == coins[x][y + 2] == coins[x][y + 3]) {
+                if (coins[x][y] == 1 || coins[x][y] == 2) {
+                    return coins[x][y];
+                }
+            }
+        }
+    }
+    // check / diagonal spaces
+    for (int x = 0; x < boardWidth - 3; ++x) {
+        for (int y = 3; y < boardHeight; y++) {
+            if (coins[x][y] == coins[x + 1][y - 1] == coins[x + 2][y - 2] == coins[x + 3][y - 3]) {
+                if (coins[x][y] == 1 || coins[x][y] == 2) {
+                    return coins[x][y];
+                }
+            }
+        }
+    }
+    // check \ diagonal spaces
+    for (int x = 0; x < boardWidth - 3; ++x) {
+        for (int y = 0; y < boardHeight - 3; ++y) {
+            if (coins[x][y] == coins[x + 1][y + 1] == coins[x + 2][y + 2] == coins[x + 3][y + 3]) {
+                if (coins[x][y] == 1 || coins[x][y] == 2) {
+                    return coins[x][y];
+                }
+            }
+        }
+    }
+    return 0;
+}
 
 void MainWindow::processSingleFrame() {
     QElapsedTimer measureTime;
@@ -175,34 +275,29 @@ void MainWindow::processSingleFrame() {
 
     this->setCameraImage(cameraImage);
 
-    //hier müssen Sie Ihren code einbauen
+    // hier müssen Sie Ihren code einbauen
 
     cv::Mat debugImage = cameraImage.clone();
 
-    //bearbeiten Sie das debug bild wie sie wollen;
+    // bearbeiten Sie das debug bild wie sie wollen;
 
-    /*
-    // only at the first time
-    if (arraySet == 0) {
-        //hopefully thats the right points ...
+    // std::cout << fields << std::endl;
+
+    // TODO: set matchFields() as calibration function and not for every frame
+    if (arraySet==0){
+
         matchFields(cameraImage, cameraImage);
+        arraySet=1;
     }
 
-    std::cout << filds.size() << std::endl;
-    for (int x = 0; x < filds.size(); x++) {
-        std::cout << filds[x].x << std::endl;
-        std::cout << filds[x].y << std::endl;
-    }
-    */
-    //matchFields(cameraImage, cameraImage);
     colorDetection(cameraImage); // stack smashing
 
     this->setDebugImage(cameraImage);
-    //sie können auch rechtecke oder linien direkt ins bild reinmalden
+    // sie können auch rechtecke oder linien direkt ins bild reinmalden
 
-    //mSceneCamera.addItem(QGraphicsRectItem(...));
+    // mSceneCamera.addItem(QGraphicsRectItem(...));
 
-    //darunter sollte nichts geändert werden
+    // darunter sollte nichts geändert werden
 
     qint64 elapsedTime = measureTime.elapsed();
 
