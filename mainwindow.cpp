@@ -146,14 +146,11 @@ void MainWindow::colorDetection(cv::Mat image) {
     // convert image to hsv for better color-detection
     cv::Mat img_hsv, maskR, maskY, mask1, mask2;
     cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
-
     // Gen lower mask (0-5) and upper mask (175-180) of RED
     cv::inRange(img_hsv, cv::Scalar(0, 50, 20), cv::Scalar(5, 255, 255), mask1);
     cv::inRange(img_hsv, cv::Scalar(175, 50, 20), cv::Scalar(180, 255, 255), mask2);
     // Merge the masks
     cv::bitwise_or(mask1, mask2, maskR);
-    // show red pixels
-
     // HUE for YELLOW is 21-30.
     int lowH = 21;
     int highH = 30;
@@ -165,61 +162,66 @@ void MainWindow::colorDetection(cv::Mat image) {
     int highV = 255;
     // Adjust Saturation and Value depending on the lighting condition of the environment
     cv::inRange(img_hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), maskY);
-    // show yellow pixels
 
-    // TODO: field needs to have 6*7 entries to set the coins correctly
-    // std::cout << fields.size() << std::endl;
+    // draw fieldnumbers on mask for debug
+    for (int i = 0; i < fields.size(); ++i) {
+        std::ostringstream convert;
+        convert << i;
+        cv::putText(maskR, convert.str(), cv::Point(fields[i].x - 20, fields[i].y - 20), cv::FONT_HERSHEY_DUPLEX, 0.2,
+                    125);
+        // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
+    }
 
     // fill 2d-vector with coins
-    int position;
-    // std::cout << fields << std::endl;
+    int position = 41;
     coins.resize(6, std::vector<int>(7, 0));
     redCoins = 0;
     yellowCoins = 0;
+    //std::cout << "maskR.size: " << maskR.size << std::endl;
     for (int j = 5; j >= 0; j--) {
         for (int i = 6; i >= 0; i--) {
-            position = j*7+i;
-            // std::cout<< position << std::endl;
-            // std::cout << "position: " << position << std::endl;
-            // std::cout << "i,j: " << i << ", " << j << std::endl;
-            // std::cout << "maskR.at(" << position << ")=" << maskR.at<float>(fields[position].x, fields[position].y) << std::endl;
-            // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
+            //std::cout << "position: " << position << std::endl;
 
             // red coins
-            if (maskR.at<float>(fields[position]) == 255) {
+            if (maskR.at<uchar>(fields[position]) == 255) {
                 // this pixel is white in mask -> red on the src-image
-                if (j < 5 && coins[j + 1][i] != 0) {
-                    // check if field underneath (j+1) has already a coin
-                    coins[j][i] = 1;
-                    std::cout << "coin red set" << std::endl;
-                    redCoins++;
-                } else if (j == 5) {
+                if (j == 5 && coins[j][i] == 0) {
                     // check if j the lowest level
                     coins[j][i] = 1;
-                    std::cout << "coin red set" << std::endl;
                     redCoins++;
+                    break;
+                    //std::cout << "coin red set at(" << j << "," << i << ")" << std::endl;
+                } else if (j < 5 && coins[j + 1][i] != 0 && coins[j][i] == 0) {
+                    // check if field underneath (j+1) has already a coin
+                    coins[j][i] = 1;
+                    redCoins++;
+                    break;
+                    //std::cout << "coin red set at(" << j << "," << i << ")" << std::endl;
                 }
             }
 
             // yellow coins
-            if (maskY.at<float>(fields[position]) == 255) {
+            if (maskY.at<uchar>(fields[position]) == 255 && coins[j][i] == 0) {
                 // this pixel is white in mask -> yellow on the src-image
-                if (j < 5 && coins[j + 1][i] != 0) {
-                    // check if field underneath (j+1) has already a coin
-                    coins[j][i] = 2;
-                    std::cout << "coin yellow set" << std::endl;
-                    yellowCoins++;
-                } else if (j == 5) {
+                if (j == 5) {
                     // check if j the lowest level
                     coins[j][i] = 2;
-                    std::cout << "coin yellow set" << std::endl;
                     yellowCoins++;
+                    break;
+                    //std::cout << "coin yellow set at(" << j << "," << i << ")" << std::endl;
+                } else if (j < 5 && coins[j + 1][i] && coins[j][i] == 0) {
+                    // check if field underneath (j+1) has already a coin
+                    coins[j][i] = 2;
+                    yellowCoins++;
+                    break;
+                    //std::cout << "coin yellow set at(" << j << "," << i << ")" << std::endl;
                 }
             }
+            position--;
         }
     }
-
-    // print values of mask-Red at fields-coordinates
+/*
+    // print values of maskR at fields-coordinates
     for (int i = 0; i < 42; ++i) {
         std::cout << maskR.at<int>(fields[i].x, fields[i].y) << ' ';
         if(i%7==0){
@@ -228,7 +230,6 @@ void MainWindow::colorDetection(cv::Mat image) {
     }
     std::cout << std::endl;
 
-    /*
     // print fields 2d-vector
     std::cout <<fields<< std::endl;
     for (int i = 0; i < 6; ++i) {
@@ -238,8 +239,7 @@ void MainWindow::colorDetection(cv::Mat image) {
         std::cout << std::endl;
     }
     std::cout << std::endl;
-    */
-    /*
+*/
     // print coins vector
     for (int i = 0; i < 6; ++i) {
         for (int j = 0; j < 7; ++j) {
@@ -248,20 +248,13 @@ void MainWindow::colorDetection(cv::Mat image) {
         std::cout << std::endl;
     }
     std::cout << std::endl;
-    */
-/*
-    // draw index of fields onto mask
-    for (int i = 0; i < fields.size(); ++i) {
-        std::ostringstream convert;
-        convert << i;
-        cv::putText(maskR, convert.str(), cv::Point(fields[i].x, fields[i].y), cv::FONT_HERSHEY_DUPLEX, 1.0, 125);
-        // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
-    }
+
+
     // cv::imshow("yellowMask", maskY);
     // cv::imshow("redMask", maskR);
-*/
     //cv::imshow("redMask", maskR);
-
+    //cv::waitKey(0);
+    //std::cout << maskR << std::endl;
     ui->label_yellow->setText(QString::number(yellowCoins) + " coins set");
     ui->label_red->setText(QString::number(redCoins) + " coins set");
 }
