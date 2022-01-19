@@ -178,10 +178,9 @@ void MainWindow::colorDetection(cv::Mat image) {
     coins.resize(6, std::vector<int>(7, 0));
     redCoins = 0;
     yellowCoins = 0;
-    //std::cout << "maskR.size: " << maskR.size << std::endl;
     for (int j = 5; j >= 0; j--) {
         for (int i = 6; i >= 0; i--) {
-            //std::cout << "position: " << position << std::endl;
+
             // red coins
             if (maskR.at<uchar>(fields[position]) == 255 && coins[j][i] == 0) {
                 // this pixel is white in mask -> red on the src-image
@@ -189,29 +188,24 @@ void MainWindow::colorDetection(cv::Mat image) {
                     // check if j the lowest level
                     coins[j][i] = 1;
                     redCoins++;
-                    //std::cout << "coin red set at(" << j << "," << i << ")" << std::endl;
                 } else if (j < 5 && coins[j + 1][i] != 0) {
                     // check if field underneath (j+1) has already a coin
                     coins[j][i] = 1;
                     redCoins++;
-                    //std::cout << "coin red set at(" << j << "," << i << ")" << std::endl;
                 }
             }
 
             // yellow coins
             if (maskY.at<uchar>(fields[position]) == 255 && coins[j][i] == 0) {
                 // this pixel is white in mask -> yellow on the src-image
-
                 if (j == 5) {
                     // check if j the lowest level
                     coins[j][i] = 2;
                     yellowCoins++;
-                    //std::cout << "coin yellow set at(" << j << "," << i << ")" << std::endl;
                 } else if (j < 5 && coins[j + 1][i] && coins[j][i] == 0) {
                     // check if field underneath (j+1) has already a coin
                     coins[j][i] = 2;
                     yellowCoins++;
-                    //std::cout << "coin yellow set at(" << j << "," << i << ")" << std::endl;
                 }
             }
             position--;
@@ -252,8 +246,8 @@ void MainWindow::colorDetection(cv::Mat image) {
     //cv::imshow("redMask", maskR);
     //cv::waitKey(0);
     //std::cout << maskR << std::endl;
-    ui->label_yellow->setText(QString::number(yellowCoins) + " coins set");
-    ui->label_red->setText(QString::number(redCoins) + " coins set");
+    ui->label_yellow->setText(QString::number(yellowCoins) + " yellow coins set");
+    ui->label_red->setText(QString::number(redCoins) + " red coins set");
 }
 
 // return 0 if no win, 1 if red won, 2 if yellow won
@@ -264,9 +258,9 @@ int MainWindow::checkWin() {
     // check horizontal spaces
     for (int y = 0; y < boardHeight; ++y) {
         for (int x = 0; x < boardWidth - 3; ++x) {
-            if (coins[x][y] == coins[x + 1][y] == coins[x + 2][y] == coins[x + 3][y]) {
-                if (coins[x][y] == 1 || coins[x][y] == 2) {
-                    return coins[x][y];
+            if (coins[y][x] == coins[y][x +1] == coins[y][x + 2] == coins[y][x + 3]) {
+                if (coins[y][x] == 1 || coins[y][x] == 2) {
+                    return coins[y][x];
                 }
             }
         }
@@ -274,9 +268,9 @@ int MainWindow::checkWin() {
     // check vertical spaces
     for (int x = 0; x < boardWidth; ++x) {
         for (int y = 0; y < boardHeight - 3; ++y) {
-            if (coins[x][y] == coins[x][y + 1] == coins[x][y + 2] == coins[x][y + 3]) {
-                if (coins[x][y] == 1 || coins[x][y] == 2) {
-                    return coins[x][y];
+            if (coins[y][x] == coins[y + 1][x] == coins[y + 2][x] == coins[y + 3][x]) {
+                if (coins[y][x] == 1 || coins[y][x] == 2) {
+                    return coins[y][x];
                 }
             }
         }
@@ -284,9 +278,9 @@ int MainWindow::checkWin() {
     // check / diagonal spaces
     for (int x = 0; x < boardWidth - 3; ++x) {
         for (int y = 3; y < boardHeight; y++) {
-            if (coins[x][y] == coins[x + 1][y - 1] == coins[x + 2][y - 2] == coins[x + 3][y - 3]) {
-                if (coins[x][y] == 1 || coins[x][y] == 2) {
-                    return coins[x][y];
+            if (coins[y][x] == coins[y - 1][x + 1] == coins[y - 2][x + 2] == coins[y - 3][x + 3]) {
+                if (coins[y][x] == 1 || coins[y][x] == 2) {
+                    return coins[y][x];
                 }
             }
         }
@@ -294,9 +288,9 @@ int MainWindow::checkWin() {
     // check \ diagonal spaces
     for (int x = 0; x < boardWidth - 3; ++x) {
         for (int y = 0; y < boardHeight - 3; ++y) {
-            if (coins[x][y] == coins[x + 1][y + 1] == coins[x + 2][y + 2] == coins[x + 3][y + 3]) {
-                if (coins[x][y] == 1 || coins[x][y] == 2) {
-                    return coins[x][y];
+            if (coins[y][x] == coins[y + 1][x + 1] == coins[y + 2][x + 2] == coins[y + 3][x + 3]) {
+                if (coins[y][x] == 1 || coins[y][x] == 2) {
+                    return coins[y][x];
                 }
             }
         }
@@ -322,14 +316,23 @@ void MainWindow::processSingleFrame() {
 
     // std::cout << fields << std::endl;
 
-    // TODO: set matchFields() as calibration function and not for every frame
+    // TODO: set matchFields() as calibration function and not for every frame with button
+    // TODO: implement resetButton
     if (arraySet == 0) {
-
         matchFields(cameraImage, cameraImage);
         arraySet = 1;
     }
 
-    colorDetection(cameraImage); // stack smashing
+    colorDetection(cameraImage);
+    int winner = 0;
+    winner = checkWin();
+    if (winner == 1){
+        ui->label_yellow->setText("YELLOW LOST");
+        ui->label_red->setText("RED WIN");
+    }else if (winner == 2){
+        ui->label_yellow->setText("RED LOST");
+        ui->label_red->setText("YELLOW WIN");
+    }
 
     this->setDebugImage(cameraImage);
     // sie können auch rechtecke oder linien direkt ins bild reinmalden
