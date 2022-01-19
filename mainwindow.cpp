@@ -90,20 +90,20 @@ void MainWindow::setDebugImage(cv::Mat image) {
     ui->graphicsView_debug->fitInView(0, 0, image.cols, image.rows, Qt::AspectRatioMode::KeepAspectRatio);
 }
 
-// use this to sort the points
+// use this to sort the points by x-value
 struct myclass {
     bool operator()(cv::Point pt1, cv::Point pt2) {
         return (pt1.x < pt2.x);
     }
 } myobject;
 
-
-// use this to sort the points
+// use this to sort the points by y-value
 struct myclass2 {
     bool operator()(cv::Point pt1, cv::Point pt2) {
-       return pt1.y < pt2.y;
+        return pt1.y < pt2.y;
     }
 } myobject2;
+
 void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
 
     // empty vector
@@ -138,11 +138,8 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
     // sort with inaccuracy
     std::sort(fields.begin(), fields.end(), myobject2);
     for (int i = 0; i < 6; ++i) {
-        std::sort(fields.begin()+i*7, fields.begin()+i*7+7, myobject);
+        std::sort(fields.begin() + i * 7, fields.begin() + i * 7 + 7, myobject);
     }
-
-    // print coordinates of all fields
-    // std::cout << fields << std::endl;
 }
 
 void MainWindow::colorDetection(cv::Mat image) {
@@ -156,7 +153,6 @@ void MainWindow::colorDetection(cv::Mat image) {
     // Merge the masks
     cv::bitwise_or(mask1, mask2, maskR);
     // show red pixels
-    // cv::imshow("redMask", maskR);
 
     // HUE for YELLOW is 21-30.
     int lowH = 21;
@@ -172,50 +168,100 @@ void MainWindow::colorDetection(cv::Mat image) {
     // show yellow pixels
 
     // TODO: field needs to have 6*7 entries to set the coins correctly
+    // std::cout << fields.size() << std::endl;
+
     // fill 2d-vector with coins
-    int position = 0;
-    std::cout << fields << std::endl;
-    //std::cout << fields.size() << std::endl;
-    //std::cout << "maskSize: " << maskY.size << std::endl;
-    //std::cout << "imgSize: " << image.size << std::endl;
+    int position;
+    // std::cout << fields << std::endl;
     coins.resize(6, std::vector<int>(7, 0));
+    redCoins = 0;
+    yellowCoins = 0;
+    for (int j = 5; j >= 0; j--) {
+        for (int i = 6; i >= 0; i--) {
+            position = j*7+i;
+            // std::cout<< position << std::endl;
+            // std::cout << "position: " << position << std::endl;
+            // std::cout << "i,j: " << i << ", " << j << std::endl;
+            // std::cout << "maskR.at(" << position << ")=" << maskR.at<float>(fields[position].x, fields[position].y) << std::endl;
+            // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
 
-    for (int j = 0; j < 6; ++j) {
-        position += j;
-        for (int i = 0; i < 7 && position < 42; ++i) {
-            //std::cout << "position: " << position << std::endl;
-            //std::cout << "i,j: " << i << ", " << j << std::endl;
             // red coins
-            //std::cout << "maskR.at(position)=" << maskR.at<float>(fields[position].x, fields[position].y) << std::endl;
-            if ( maskR.at<int>(fields[position].x, fields[position].y) == 255){
+            if (maskR.at<double>(fields[position].x, fields[position].y) == 255) {
                 // this pixel is white in mask -> red on the src-image
-                //std::cout << maskR.at<cv::Scalar>(fields[position].x, fields[position].y) << std::endl;
-                coins[j][i] = 1;
-                std::cout << "coin red set" << std::endl;
-                redCoins++;
-            }
-            // yellow coins
-            // this pixel is white in mask -> yellow on the src-image
-            if ( maskR.at<int>(fields[position].x, fields[position].y) == 255){
-                //std::cout << maskR.at<cv::Scalar>(fields[position].x, fields[position].y) << std::endl;
-                coins[j][i] = 2;
-                std::cout << "coin yellow set" << std::endl;
-                yellowCoins++;
+                if (j < 5 && coins[j + 1][i] != 0) {
+                    // check if field underneath (j+1) has already a coin
+                    coins[j][i] = 1;
+                    std::cout << "coin red set" << std::endl;
+                    redCoins++;
+                } else if (j == 5) {
+                    // check if j the lowest level
+                    coins[j][i] = 1;
+                    std::cout << "coin red set" << std::endl;
+                    redCoins++;
+                }
             }
 
-            position++;
+            // yellow coins
+            if (maskY.at<double>(fields[position].x, fields[position].y) == 255) {
+                // this pixel is white in mask -> yellow on the src-image
+                if (j < 5 && coins[j + 1][i] != 0) {
+                    // check if field underneath (j+1) has already a coin
+                    coins[j][i] = 2;
+                    std::cout << "coin yellow set" << std::endl;
+                    yellowCoins++;
+                } else if (j == 5) {
+                    // check if j the lowest level
+                    coins[j][i] = 2;
+                    std::cout << "coin yellow set" << std::endl;
+                    yellowCoins++;
+                }
+            }
         }
     }
+
+    // print values of mask-Red at fields-coordinates
+    for (int i = 0; i < 42; ++i) {
+        std::cout << maskR.at<int>(fields[i].x, fields[i].y) << ' ';
+        if(i%7==0){
+            std::cout << std::endl;
+        }
+    }
+    std::cout << std::endl;
+
+    /*
+    // print fields 2d-vector
+    std::cout <<fields<< std::endl;
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 7; ++j) {
+            std::cout << fields[i*6+j].x << "," << fields[i*6+j].y << ' ';
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    */
+    /*
+    // print coins vector
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 7; ++j) {
+            std::cout << coins[i][j] << ' ';
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    */
+/*
+    // draw index of fields onto mask
     for (int i = 0; i < fields.size(); ++i) {
         std::ostringstream convert;
         convert << i;
-        cv::putText(maskR, convert.str() ,cv::Point(fields[i].x, fields[i].y), cv::FONT_HERSHEY_DUPLEX, 1.0, 125);
-        cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
+        cv::putText(maskR, convert.str(), cv::Point(fields[i].x, fields[i].y), cv::FONT_HERSHEY_DUPLEX, 1.0, 125);
+        // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
     }
+    // cv::imshow("yellowMask", maskY);
+    // cv::imshow("redMask", maskR);
+*/
+    //cv::imshow("redMask", maskR);
 
-    cv::imshow("yellowMask", maskY);
-    cv::imshow("redMask", maskR);
-    cv::waitKey(0);
     ui->label_yellow->setText(QString::number(yellowCoins) + " coins set");
     ui->label_red->setText(QString::number(redCoins) + " coins set");
 }
@@ -287,10 +333,10 @@ void MainWindow::processSingleFrame() {
     // std::cout << fields << std::endl;
 
     // TODO: set matchFields() as calibration function and not for every frame
-    if (arraySet==0){
+    if (arraySet == 0) {
 
         matchFields(cameraImage, cameraImage);
-        arraySet=1;
+        arraySet = 1;
     }
 
     colorDetection(cameraImage); // stack smashing
