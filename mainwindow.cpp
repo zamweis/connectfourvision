@@ -186,7 +186,7 @@ void MainWindow::colorDetection(cv::Mat image) {
             // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
 
             // red coins
-            if (maskR.at<double>(fields[position].x, fields[position].y) == 255) {
+            if (maskR.at<float>(fields[position]) == 255) {
                 // this pixel is white in mask -> red on the src-image
                 if (j < 5 && coins[j + 1][i] != 0) {
                     // check if field underneath (j+1) has already a coin
@@ -202,7 +202,7 @@ void MainWindow::colorDetection(cv::Mat image) {
             }
 
             // yellow coins
-            if (maskY.at<double>(fields[position].x, fields[position].y) == 255) {
+            if (maskY.at<float>(fields[position]) == 255) {
                 // this pixel is white in mask -> yellow on the src-image
                 if (j < 5 && coins[j + 1][i] != 0) {
                     // check if field underneath (j+1) has already a coin
