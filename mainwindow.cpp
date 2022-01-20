@@ -49,47 +49,6 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow() {
     delete ui;
 }
-
-void MainWindow::setCameraImage(cv::Mat image) {
-    mCameraImage = image.clone();
-
-    if (mCameraImage.type() == CV_8UC1) {
-        cv::cvtColor(mCameraImage, mCameraImage, cv::COLOR_GRAY2RGB);
-    }
-    if (mCameraImage.type() == CV_8UC3) {
-        cv::cvtColor(mCameraImage, mCameraImage, cv::COLOR_RGB2BGR);
-    }
-    if (mCameraImage.type() == CV_8UC4) {
-        cv::cvtColor(mCameraImage, mCameraImage, cv::COLOR_RGBA2BGR);
-    }
-
-    QImage qimage(mCameraImage.data, image.cols, image.rows, image.cols * 3, QImage::Format_RGB888);
-
-    mPixmapCamera->setPixmap(QPixmap::fromImage(qimage));
-    mPixmapCamera->setPos(0, 0);
-    ui->graphicsView_camera->fitInView(0, 0, image.cols, image.rows, Qt::AspectRatioMode::KeepAspectRatio);
-}
-
-void MainWindow::setDebugImage(cv::Mat image) {
-    mDebugImage = image.clone();
-
-    if (mDebugImage.type() == CV_8UC1) {
-        cv::cvtColor(mDebugImage, mDebugImage, cv::COLOR_GRAY2RGB);
-    }
-    if (mDebugImage.type() == CV_8UC3) {
-        cv::cvtColor(mDebugImage, mDebugImage, cv::COLOR_RGB2BGR);
-    }
-    if (mDebugImage.type() == CV_8UC4) {
-        cv::cvtColor(mDebugImage, mDebugImage, cv::COLOR_RGBA2BGR);
-    }
-
-    QImage qimage(mDebugImage.data, image.cols, image.rows, image.cols * 3, QImage::Format_RGB888);
-
-    mPixmapDebug->setPixmap(QPixmap::fromImage(qimage));
-    mPixmapDebug->setPos(0, 0);
-    ui->graphicsView_debug->fitInView(0, 0, image.cols, image.rows, Qt::AspectRatioMode::KeepAspectRatio);
-}
-
 // use this to sort the points by x-value
 struct myclass {
     bool operator()(cv::Point pt1, cv::Point pt2) {
@@ -151,17 +110,10 @@ void MainWindow::colorDetection(cv::Mat image) {
     cv::inRange(img_hsv, cv::Scalar(175, 50, 20), cv::Scalar(180, 255, 255), mask2);
     // Merge the masks
     cv::bitwise_or(mask1, mask2, maskR);
+
     // HUE for YELLOW is 21-30.
-    int lowH = 21;
-    int highH = 30;
-    // Saturation
-    int lowS = 190;
-    int highS = 255;
-    // Value
-    int lowV = 20;
-    int highV = 255;
     // Adjust Saturation and Value depending on the lighting condition of the environment
-    cv::inRange(img_hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), maskY);
+    cv::inRange(img_hsv, cv::Scalar(21, 190, 20), cv::Scalar(30, 255, 255), maskY);
 
     // draw fieldnumbers on mask for debug
     for (int i = 0; i < fields.size(); ++i) {
@@ -171,7 +123,10 @@ void MainWindow::colorDetection(cv::Mat image) {
                     125);
         // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
     }
+    insertCoins(maskR, maskY);
+}
 
+void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY){
     // fill 2d-vector with coins
     int position = 41;
     coins.clear();
@@ -211,26 +166,6 @@ void MainWindow::colorDetection(cv::Mat image) {
             position--;
         }
     }
-/*
-    // print values of maskR at fields-coordinates
-    for (int i = 0; i < 42; ++i) {
-        std::cout << maskR.at<int>(fields[i].x, fields[i].y) << ' ';
-        if(i%7==0){
-            std::cout << std::endl;
-        }
-    }
-    std::cout << std::endl;
-
-    // print fields 2d-vector
-    std::cout <<fields<< std::endl;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j < 7; ++j) {
-            std::cout << fields[i*6+j].x << "," << fields[i*6+j].y << ' ';
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-*/
     // print coins vector
     for (int i = 0; i < 6; ++i) {
         for (int j = 0; j < 7; ++j) {
@@ -240,12 +175,6 @@ void MainWindow::colorDetection(cv::Mat image) {
     }
     std::cout << std::endl;
 
-
-    // cv::imshow("yellowMask", maskY);
-    // cv::imshow("redMask", maskR);
-    //cv::imshow("redMask", maskR);
-    //cv::waitKey(0);
-    //std::cout << maskR << std::endl;
     ui->label_yellow->setText(QString::number(yellowCoins) + " yellow coins set");
     ui->label_red->setText(QString::number(redCoins) + " red coins set");
 }
@@ -298,6 +227,46 @@ int MainWindow::checkWin() {
     return 0;
 }
 
+void MainWindow::setCameraImage(cv::Mat image) {
+    mCameraImage = image.clone();
+
+    if (mCameraImage.type() == CV_8UC1) {
+        cv::cvtColor(mCameraImage, mCameraImage, cv::COLOR_GRAY2RGB);
+    }
+    if (mCameraImage.type() == CV_8UC3) {
+        cv::cvtColor(mCameraImage, mCameraImage, cv::COLOR_RGB2BGR);
+    }
+    if (mCameraImage.type() == CV_8UC4) {
+        cv::cvtColor(mCameraImage, mCameraImage, cv::COLOR_RGBA2BGR);
+    }
+
+    QImage qimage(mCameraImage.data, image.cols, image.rows, image.cols * 3, QImage::Format_RGB888);
+
+    mPixmapCamera->setPixmap(QPixmap::fromImage(qimage));
+    mPixmapCamera->setPos(0, 0);
+    ui->graphicsView_camera->fitInView(0, 0, image.cols, image.rows, Qt::AspectRatioMode::KeepAspectRatio);
+}
+
+void MainWindow::setDebugImage(cv::Mat image) {
+    mDebugImage = image.clone();
+
+    if (mDebugImage.type() == CV_8UC1) {
+        cv::cvtColor(mDebugImage, mDebugImage, cv::COLOR_GRAY2RGB);
+    }
+    if (mDebugImage.type() == CV_8UC3) {
+        cv::cvtColor(mDebugImage, mDebugImage, cv::COLOR_RGB2BGR);
+    }
+    if (mDebugImage.type() == CV_8UC4) {
+        cv::cvtColor(mDebugImage, mDebugImage, cv::COLOR_RGBA2BGR);
+    }
+
+    QImage qimage(mDebugImage.data, image.cols, image.rows, image.cols * 3, QImage::Format_RGB888);
+
+    mPixmapDebug->setPixmap(QPixmap::fromImage(qimage));
+    mPixmapDebug->setPos(0, 0);
+    ui->graphicsView_debug->fitInView(0, 0, image.cols, image.rows, Qt::AspectRatioMode::KeepAspectRatio);
+}
+
 void MainWindow::processSingleFrame() {
     QElapsedTimer measureTime;
     measureTime.start();
@@ -345,7 +314,6 @@ void MainWindow::processSingleFrame() {
 
     ui->label_processingTime->setText(QString::number(elapsedTime) + " ms");
 }
-
 
 void MainWindow::setLoopTime(int value) {
     mTimer.setInterval(value);
