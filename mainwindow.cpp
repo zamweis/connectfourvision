@@ -346,8 +346,6 @@ void MainWindow::processSingleFrame() {
 
     this->setCameraImage(cameraImage);
 
-    cv::Mat debugImage = cameraImage.clone();
-
     // check if round has been won
     if (!roundWon) {
         // check if fields are calibrated
@@ -369,7 +367,8 @@ void MainWindow::processSingleFrame() {
             roundWon = true;
         }
 
-        roundWon = false; // uncomment this to prevent stop when a team wins
+        // uncomment this to prevent stop when a team wins
+        // roundWon = false;
 
         this->setDebugImage(cameraImage);
     } else {
