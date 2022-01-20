@@ -169,6 +169,7 @@ void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY) {
             position--;
         }
     }
+/*
     // print coins vector
     for (int i = 0; i < 6; ++i) {
         for (int j = 0; j < 7; ++j) {
@@ -177,6 +178,7 @@ void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY) {
         std::cout << std::endl;
     }
     std::cout << std::endl;
+*/
 
     ui->label_yellow->setText(QString::number(yellowCoins) + " yellow coins set");
     ui->label_red->setText(QString::number(redCoins) + " red coins set");
@@ -186,23 +188,35 @@ void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY) {
 int MainWindow::checkWin() {
     int boardHeight = 6;
     int boardWidth = 7;
+    int winner=0;
 
     // check horizontal spaces
     for (int y = 0; y < boardHeight; y++) {
         for (int x = 0; x < boardWidth - 3; x++) {
             if ((coins[y][x] == coins[y][x + 1]) && (coins[y][x] == coins[y][x + 2]) &&
                 (coins[y][x] == coins[y][x + 3])) {
-                return coins[y][x];
+                if (coins[y][x] == 1) {
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
+                    winner = 1;
+                } else if (coins[y][x] == 2) {
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
+                    winner =  2;
+                }
             }
         }
     }
-
     // check vertical spaces
     for (int x = 0; x < boardWidth; x++) {
         for (int y = 0; y < boardHeight - 3; y++) {
             if ((coins[y][x] == coins[y + 1][x]) && (coins[y][x] == coins[y + 2][x]) &&
                 (coins[y][x] == coins[y + 3][x])) {
-                return coins[y][x];
+                if (coins[y][x] == 1) {
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
+                    winner = 1;
+                } else if (coins[y][x] == 2) {
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
+                    winner =  2;
+                }
             }
         }
     }
@@ -211,7 +225,13 @@ int MainWindow::checkWin() {
         for (int y = 3; y < boardHeight; y++) {
             if ((coins[y][x] == coins[y - 1][x + 1]) && (coins[y][x] == coins[y - 2][x + 2]) &&
                 (coins[y][x] == coins[y - 3][x + 3])) {
-                return coins[y][x];
+                if (coins[y][x] == 1) {
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
+                    winner = 1;
+                } else if (coins[y][x] == 2) {
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
+                    winner =  2;
+                }
             }
         }
     }
@@ -220,11 +240,17 @@ int MainWindow::checkWin() {
         for (int y = 0; y < boardHeight - 3; y++) {
             if ((coins[y][x] == coins[y + 1][x + 1]) && (coins[y][x] == coins[y + 2][x + 2]) &&
                 (coins[y][x] == coins[y + 3][x + 3])) {
-                return coins[y][x];
+                if (coins[y][x] == 1) {
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
+                    winner = 1;
+                } else if (coins[y][x] == 2) {
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
+                    winner =  2;
+                }
             }
         }
     }
-    return 0;
+    return winner;
 }
 
 void MainWindow::setCameraImage(cv::Mat image) {
@@ -297,11 +323,9 @@ void MainWindow::processSingleFrame() {
     if (winner == 1) {
         ui->label_yellow->setText("YELLOW LOST");
         ui->label_red->setText("RED WIN");
-        std::cout << "WINNER WINNEER, CHICKEN DINNER...RED" << std::endl;
     } else if (winner == 2) {
         ui->label_yellow->setText("RED LOST");
         ui->label_red->setText("YELLOW WIN");
-        std::cout << "WINNER WINNEER, CHICKEN DINNER...YELLOW" << std::endl;
     }
 
     this->setDebugImage(cameraImage);
