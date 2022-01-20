@@ -210,21 +210,22 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
     int boardHeight = 6;
     int boardWidth = 7;
     int winner = 0;
-
+    int fieldPosStart;
+    int fieldPosEnd;
     // check horizontal spaces
     for (int y = 0; y < boardHeight; y++) {
         for (int x = 0; x < boardWidth - 3; x++) {
             if ((coins[y][x] == coins[y][x + 1]) && (coins[y][x] == coins[y][x + 2]) &&
                 (coins[y][x] == coins[y][x + 3])) {
+                fieldPosStart = y * 7 + x;
+                fieldPosEnd = y * 7 + x + 3;
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
-                             cv::Point(fields[y * 7 + x + 3].x, fields[y * 7 + x + 3].y), CV_RGB(255, 0, 0), 3);
-                    std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
+                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                             cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y), CV_RGB(255, 0, 0), 3);
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
-                             cv::Point(fields[y * 7 + x + 3].x, fields[y * 7 + x + 3].y), CV_RGB(255, 255, 0), 3);
-                    std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
+                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                             cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y), CV_RGB(255, 255, 0), 3);
                     winner = 2;
                 }
             }
@@ -235,16 +236,15 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
         for (int y = 0; y < boardHeight - 3; y++) {
             if ((coins[y][x] == coins[y + 1][x]) && (coins[y][x] == coins[y + 2][x]) &&
                 (coins[y][x] == coins[y + 3][x])) {
+                fieldPosStart = y * 7 + x;
+                fieldPosEnd = (y + 3) * 7 + x;
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
-                             cv::Point(fields[(y + 3) * 7 + x].x, fields[(y + 3) * 7 + x].y), CV_RGB(255, 0, 0), 3);
-                    std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
+                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                             cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y), CV_RGB(255, 0, 0), 3);
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
-                             cv::Point(fields[(y + 3) * 7 + x].x, fields[(y + 3) * 7 + x].y), CV_RGB(255, 255, 0),
-                             3);
-                    std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
+                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                             cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y), CV_RGB(255, 255, 0), 3);
                     winner = 2;
                 }
             }
@@ -255,17 +255,17 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
         for (int y = 3; y < boardHeight; y++) {
             if ((coins[y][x] == coins[y - 1][x + 1]) && (coins[y][x] == coins[y - 2][x + 2]) &&
                 (coins[y][x] == coins[y - 3][x + 3])) {
+                fieldPosStart = y * 7 + x;
+                fieldPosEnd = (y - 3) * 7 + x + 3;
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
-                             cv::Point(fields[(y - 3) * 7 + x + 3].x, fields[(y - 3) * 7 + x + 3].y),
+                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                             cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y),
                              CV_RGB(255, 0, 0), 3);
-                    std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
-                             cv::Point(fields[(y - 3) * 7 + x + 3].x, fields[(y - 3) * 7 + x + 3].y),
+                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                             cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y),
                              CV_RGB(255, 255, 0), 3);
-                    std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
                     winner = 2;
                 }
             }
@@ -276,22 +276,23 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
         for (int y = 0; y < boardHeight - 3; y++) {
             if ((coins[y][x] == coins[y + 1][x + 1]) && (coins[y][x] == coins[y + 2][x + 2]) &&
                 (coins[y][x] == coins[y + 3][x + 3])) {
+                fieldPosStart = y * 7 + x;
+                fieldPosEnd = (y + 3) * 7 + x + 3;
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
-                             cv::Point(fields[(y + 3) * 7 + x + 3].x,
-                                       fields[(y + 3) * 7 + x + 3].y), CV_RGB(255, 0, 0), 3);
-                    std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
+                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                             cv::Point(fields[fieldPosEnd].x,
+                                       fields[fieldPosEnd].y), CV_RGB(255, 0, 0), 3);
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
-                             cv::Point(fields[(y + 3) * 7 + x + 3].x,
-                                       fields[(y + 3) * 7 + x + 3].y), CV_RGB(255, 255, 0), 3);
-                    std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
+                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                             cv::Point(fields[fieldPosEnd].x,
+                                       fields[fieldPosEnd].y), CV_RGB(255, 255, 0), 3);
                     winner = 2;
                 }
             }
         }
     }
+    if (winner != 0) std::cout << "WINNRE WINNER, CHICKEN DINNER" << std::endl;
     return winner;
 }
 
