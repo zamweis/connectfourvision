@@ -94,7 +94,8 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
         cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
 
         if (maxval > 0) {
-            cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, templateWidth, templateHeight), (0, 255, 0), 5);
+            cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, templateWidth, templateHeight), CV_RGB(0, 255, 0),
+                          5);
             cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
             // add matches to vector
             fields.push_back(cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius));
@@ -153,13 +154,17 @@ void MainWindow::insertCoins(cv::Mat cameraImage) {
                     // check if j the lowest level
                     coins[j][i] = 1;
                     redCoins++;
-                    cv::rectangle(cameraImage, cv::Rect(fields[position].x-coinRadius, fields[position].y-coinRadius, templateWidth, templateHeight), (255, 0, 0), 5);
+                    cv::rectangle(cameraImage,
+                                  cv::Rect(fields[position].x - coinRadius, fields[position].y - coinRadius,
+                                           templateWidth, templateHeight), CV_RGB(255, 0, 0), 5);
 
                 } else if (j < 5 && coins[j + 1][i] != 0) {
                     // check if field underneath (j+1) has already a coin
                     coins[j][i] = 1;
                     redCoins++;
-                    cv::rectangle(cameraImage, cv::Rect(fields[position].x-coinRadius, fields[position].y-coinRadius, templateWidth, templateHeight), (255, 0, 0), 5);
+                    cv::rectangle(cameraImage,
+                                  cv::Rect(fields[position].x - coinRadius, fields[position].y - coinRadius,
+                                           templateWidth, templateHeight), CV_RGB(255, 0, 0), 5);
                 }
             }
 
@@ -170,12 +175,16 @@ void MainWindow::insertCoins(cv::Mat cameraImage) {
                     // check if j the lowest level
                     coins[j][i] = 2;
                     yellowCoins++;
-                    cv::rectangle(cameraImage, cv::Rect(fields[position].x-coinRadius, fields[position].y-coinRadius, templateWidth, templateHeight), (255, 255, 0), 5);
+                    cv::rectangle(cameraImage,
+                                  cv::Rect(fields[position].x - coinRadius, fields[position].y - coinRadius,
+                                           templateWidth, templateHeight), CV_RGB(255, 255, 0), 5);
                 } else if (j < 5 && coins[j + 1][i] && coins[j][i] == 0) {
                     // check if field underneath (j+1) has already a coin
                     coins[j][i] = 2;
                     yellowCoins++;
-                    cv::rectangle(cameraImage, cv::Rect(fields[position].x-coinRadius, fields[position].y-coinRadius, templateWidth, templateHeight), (255, 255, 0), 5);
+                    cv::rectangle(cameraImage,
+                                  cv::Rect(fields[position].x - coinRadius, fields[position].y - coinRadius,
+                                           templateWidth, templateHeight), CV_RGB(255, 255, 0), 5);
                 }
             }
             position--;
@@ -197,7 +206,7 @@ void MainWindow::insertCoins(cv::Mat cameraImage) {
 }
 
 // return 0 if no win, 1 if red won, 2 if yellow won
-int MainWindow::checkWin() {
+int MainWindow::checkWin(cv::Mat cameraImage) {
     int boardHeight = 6;
     int boardWidth = 7;
     int winner = 0;
@@ -208,9 +217,14 @@ int MainWindow::checkWin() {
             if ((coins[y][x] == coins[y][x + 1]) && (coins[y][x] == coins[y][x + 2]) &&
                 (coins[y][x] == coins[y][x + 3])) {
                 if (coins[y][x] == 1) {
+                    std::cout << "endposition: " << y * 7 + x << ", " << std::endl;
+                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
+                             cv::Point(fields[y * 7 + x + 3].x, fields[y * 7 + x + 3].y), CV_RGB(255, 0, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
                     winner = 1;
                 } else if (coins[y][x] == 2) {
+                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
+                             cv::Point(fields[y * 7 + x + 3].x, fields[y * 7 + x + 3].y), CV_RGB(255, 255, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
                     winner = 2;
                 }
@@ -223,9 +237,14 @@ int MainWindow::checkWin() {
             if ((coins[y][x] == coins[y + 1][x]) && (coins[y][x] == coins[y + 2][x]) &&
                 (coins[y][x] == coins[y + 3][x])) {
                 if (coins[y][x] == 1) {
+                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
+                             cv::Point(fields[(y + 3) * 7 + x].x, fields[(y + 3) * 7 + x].y), CV_RGB(255, 0, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
                     winner = 1;
                 } else if (coins[y][x] == 2) {
+                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
+                             cv::Point(fields[(y + 3) * 7 + x].x, fields[(y + 3) * 7 + x].y), CV_RGB(255, 255, 0),
+                             3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
                     winner = 2;
                 }
@@ -238,9 +257,15 @@ int MainWindow::checkWin() {
             if ((coins[y][x] == coins[y - 1][x + 1]) && (coins[y][x] == coins[y - 2][x + 2]) &&
                 (coins[y][x] == coins[y - 3][x + 3])) {
                 if (coins[y][x] == 1) {
+                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
+                             cv::Point(fields[(y - 3) * 7 + x + 3].x, fields[(y - 3) * 7 + x + 3].y),
+                             CV_RGB(255, 0, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
                     winner = 1;
                 } else if (coins[y][x] == 2) {
+                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
+                             cv::Point(fields[(y - 3) * 7 + x + 3].x, fields[(y - 3) * 7 + x + 3].y),
+                             CV_RGB(255, 255, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
                     winner = 2;
                 }
@@ -253,9 +278,15 @@ int MainWindow::checkWin() {
             if ((coins[y][x] == coins[y + 1][x + 1]) && (coins[y][x] == coins[y + 2][x + 2]) &&
                 (coins[y][x] == coins[y + 3][x + 3])) {
                 if (coins[y][x] == 1) {
+                    cv::line(cameraImage, cv::Point(fields[y * 6 + x].x, fields[y * 6 + x].y),
+                             cv::Point(fields[(y + 3) * 6 + x + 3].x,
+                                       fields[(y + 3) * 6 + x + 3].y), CV_RGB(255, 0, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
                     winner = 1;
                 } else if (coins[y][x] == 2) {
+                    cv::line(cameraImage, cv::Point(fields[y * 6 + x].x, fields[y * 6 + x].y),
+                             cv::Point(fields[(y + 3) * 6 + x + 3].x,
+                                       fields[(y + 3) * 6 + x + 3].y - coinRadius), CV_RGB(255, 255, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
                     winner = 2;
                 }
@@ -336,7 +367,7 @@ void MainWindow::processSingleFrame() {
         // insert coins into 2d vector
         insertCoins(cameraImage);
         // check for winner
-        int winner = checkWin();
+        int winner = checkWin(cameraImage);
         if (winner == 1) {
             redRounds++;
             roundWon = true;
@@ -344,17 +375,18 @@ void MainWindow::processSingleFrame() {
             yellowRounds++;
             roundWon = true;
         }
-    } else{
+        this->setDebugImage(cameraImage);
+    } else {
         stop();
+        std::cout << "Empty field for next round and press start" << std::endl;
         ui->label_status->setText("Status: Round Won");
-        roundWon=false;
+        roundWon = false;
     }
 
 
     ui->label_red_rounds->setText("Red Rounds: " + QString::number(redRounds));
     ui->label_yellow_rounds->setText("Yellow Rounds: " + QString::number(yellowRounds));
 
-    this->setDebugImage(cameraImage);
     // sie können auch rechtecke oder linien direkt ins bild reinmalden
 
     // mSceneCamera.addItem(QGraphicsRectItem(...));

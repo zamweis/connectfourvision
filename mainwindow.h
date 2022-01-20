@@ -45,7 +45,7 @@ private:
     void colorDetection(cv::Mat image);
     void matchFields(cv::Mat debugImage, cv::Mat cameraImage);
     void insertCoins(cv::Mat cameraImage);
-    int checkWin();
+    int checkWin(cv::Mat cameraImage);
 
 public slots:
 
