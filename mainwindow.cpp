@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
     //mCameraStream.open(1);
-    mCameraStream = cv::VideoCapture("testvideo2.mp4.mp4");
+    mCameraStream = cv::VideoCapture("testvideo2.mp4");
     start();
 
 }
