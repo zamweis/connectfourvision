@@ -124,7 +124,7 @@ void MainWindow::colorDetection(cv::Mat image) {
     // Adjust Saturation and Value depending on the lighting condition of the environment
     cv::inRange(img_hsv, cv::Scalar(21, 190, 20), cv::Scalar(30, 255, 255), maskY);
 
-    // draw fieldnumbers on mask for debug
+    // draw field numbers on mask for debug
     /*
     for (int i = 0; i < fields.size(); ++i) {
         std::ostringstream convert;
@@ -217,7 +217,6 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
             if ((coins[y][x] == coins[y][x + 1]) && (coins[y][x] == coins[y][x + 2]) &&
                 (coins[y][x] == coins[y][x + 3])) {
                 if (coins[y][x] == 1) {
-                    std::cout << "endposition: " << y * 7 + x << ", " << std::endl;
                     cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
                              cv::Point(fields[y * 7 + x + 3].x, fields[y * 7 + x + 3].y), CV_RGB(255, 0, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
@@ -278,22 +277,21 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
             if ((coins[y][x] == coins[y + 1][x + 1]) && (coins[y][x] == coins[y + 2][x + 2]) &&
                 (coins[y][x] == coins[y + 3][x + 3])) {
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[y * 6 + x].x, fields[y * 6 + x].y),
-                             cv::Point(fields[(y + 3) * 6 + x + 3].x,
-                                       fields[(y + 3) * 6 + x + 3].y), CV_RGB(255, 0, 0), 3);
+                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
+                             cv::Point(fields[(y + 3) * 7 + x + 3].x,
+                                       fields[(y + 3) * 7 + x + 3].y), CV_RGB(255, 0, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...RED" << std::endl;
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[y * 6 + x].x, fields[y * 6 + x].y),
-                             cv::Point(fields[(y + 3) * 6 + x + 3].x,
-                                       fields[(y + 3) * 6 + x + 3].y - coinRadius), CV_RGB(255, 255, 0), 3);
+                    cv::line(cameraImage, cv::Point(fields[y * 7 + x].x, fields[y * 7 + x].y),
+                             cv::Point(fields[(y + 3) * 7 + x + 3].x,
+                                       fields[(y + 3) * 7 + x + 3].y), CV_RGB(255, 255, 0), 3);
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
                     winner = 2;
                 }
             }
         }
     }
-    if (winner != 0) roundWon = true;
     return winner;
 }
 
@@ -375,6 +373,8 @@ void MainWindow::processSingleFrame() {
             yellowRounds++;
             roundWon = true;
         }
+        // uncomment this to prevent stop when a team wins
+        // roundWon = false;
         this->setDebugImage(cameraImage);
     } else {
         stop();
