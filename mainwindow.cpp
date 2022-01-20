@@ -49,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow() {
     delete ui;
 }
+
 // use this to sort the points by x-value
 struct myclass {
     bool operator()(cv::Point pt1, cv::Point pt2) {
@@ -116,6 +117,7 @@ void MainWindow::colorDetection(cv::Mat image) {
     cv::inRange(img_hsv, cv::Scalar(21, 190, 20), cv::Scalar(30, 255, 255), maskY);
 
     // draw fieldnumbers on mask for debug
+    /*
     for (int i = 0; i < fields.size(); ++i) {
         std::ostringstream convert;
         convert << i;
@@ -123,10 +125,11 @@ void MainWindow::colorDetection(cv::Mat image) {
                     125);
         // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
     }
+     */
     insertCoins(maskR, maskY);
 }
 
-void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY){
+void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY) {
     // fill 2d-vector with coins
     int position = 41;
     coins.clear();
@@ -185,42 +188,39 @@ int MainWindow::checkWin() {
     int boardWidth = 7;
 
     // check horizontal spaces
-    for (int y = 0; y < boardHeight; ++y) {
-        for (int x = 0; x < boardWidth - 3; ++x) {
-            if (coins[y][x] == coins[y][x +1] == coins[y][x + 2] == coins[y][x + 3]) {
-                if (coins[y][x] == 1 || coins[y][x] == 2) {
-                    return coins[y][x];
-                }
+    for (int y = 0; y < boardHeight; y++) {
+        for (int x = 0; x < boardWidth - 3; x++) {
+            if ((coins[y][x] == coins[y][x + 1]) && (coins[y][x] == coins[y][x + 2]) &&
+                (coins[y][x] == coins[y][x + 3])) {
+                return coins[y][x];
             }
         }
     }
+
     // check vertical spaces
-    for (int x = 0; x < boardWidth; ++x) {
-        for (int y = 0; y < boardHeight - 3; ++y) {
-            if (coins[y][x] == coins[y + 1][x] == coins[y + 2][x] == coins[y + 3][x]) {
-                if (coins[y][x] == 1 || coins[y][x] == 2) {
-                    return coins[y][x];
-                }
+    for (int x = 0; x < boardWidth; x++) {
+        for (int y = 0; y < boardHeight - 3; y++) {
+            if ((coins[y][x] == coins[y + 1][x]) && (coins[y][x] == coins[y + 2][x]) &&
+                (coins[y][x] == coins[y + 3][x])) {
+                return coins[y][x];
             }
         }
     }
     // check / diagonal spaces
-    for (int x = 0; x < boardWidth - 3; ++x) {
+    for (int x = 0; x < boardWidth - 3; x++) {
         for (int y = 3; y < boardHeight; y++) {
-            if (coins[y][x] == coins[y - 1][x + 1] == coins[y - 2][x + 2] == coins[y - 3][x + 3]) {
-                if (coins[y][x] == 1 || coins[y][x] == 2) {
-                    return coins[y][x];
-                }
+            if ((coins[y][x] == coins[y - 1][x + 1]) && (coins[y][x] == coins[y - 2][x + 2]) &&
+                (coins[y][x] == coins[y - 3][x + 3])) {
+                return coins[y][x];
             }
         }
     }
     // check \ diagonal spaces
-    for (int x = 0; x < boardWidth - 3; ++x) {
-        for (int y = 0; y < boardHeight - 3; ++y) {
-            if (coins[y][x] == coins[y + 1][x + 1] == coins[y + 2][x + 2] == coins[y + 3][x + 3]) {
-                if (coins[y][x] == 1 || coins[y][x] == 2) {
-                    return coins[y][x];
-                }
+    for (int x = 0; x < boardWidth - 3; x++) {
+        for (int y = 0; y < boardHeight - 3; y++) {
+            if ((coins[y][x] == coins[y + 1][x + 1]) && (coins[y][x] == coins[y + 2][x + 2]) &&
+                (coins[y][x] == coins[y + 3][x + 3])) {
+                return coins[y][x];
             }
         }
     }
@@ -293,14 +293,15 @@ void MainWindow::processSingleFrame() {
     }
 
     colorDetection(cameraImage);
-    int winner = 0;
-    winner = checkWin();
-    if (winner == 1){
+    int winner = checkWin();
+    if (winner == 1) {
         ui->label_yellow->setText("YELLOW LOST");
         ui->label_red->setText("RED WIN");
-    }else if (winner == 2){
+        std::cout << "WINNER WINNEER, CHICKEN DINNER...RED" << std::endl;
+    } else if (winner == 2) {
         ui->label_yellow->setText("RED LOST");
         ui->label_red->setText("YELLOW WIN");
+        std::cout << "WINNER WINNEER, CHICKEN DINNER...YELLOW" << std::endl;
     }
 
     this->setDebugImage(cameraImage);
