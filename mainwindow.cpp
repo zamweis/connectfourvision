@@ -84,9 +84,9 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
 
     // Apply threshold
     cv::Mat res;
-
     res_32f.convertTo(res, CV_8U, 255.0);
     cv::adaptiveThreshold(res, res, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, templateSize, -128);
+
     // draw rectangle around matches and mark current match as drawn
     while (true) {
         double minval, maxval;
@@ -94,16 +94,16 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
         cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
 
         if (maxval > 0) {
-            cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, templateWidth, templateHeight), CV_RGB(0, 255, 0),
-                          5);
+            // draw rectangle around fields for debug
+            // cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, templateWidth, templateHeight), CV_RGB(0, 255, 0),);
             cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
+
             // add matches to vector
             fields.push_back(cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius));
-            // cv::circle(cameraImage, cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius), 40, (255, 255, 125), 4);
         } else
             break;
     }
-    // sort with inaccuracy
+    // sort and respect inaccuracy
     std::sort(fields.begin(), fields.end(), myobject2);
     for (int i = 0; i < 6; ++i) {
         std::sort(fields.begin() + i * 7, fields.begin() + i * 7 + 7, myobject);
@@ -114,26 +114,34 @@ void MainWindow::colorDetection(cv::Mat image) {
     // convert image to hsv for better color-detection
     cv::Mat img_hsv, mask1, mask2;
     cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
+
     // Gen lower mask (0-5) and upper mask (175-180) of RED
-    cv::inRange(img_hsv, cv::Scalar(0, 50, 20), cv::Scalar(5, 255, 255), mask1);
-    cv::inRange(img_hsv, cv::Scalar(175, 50, 20), cv::Scalar(180, 255, 255), mask2);
+    cv::inRange(img_hsv, cv::Scalar(0, 60, 60), cv::Scalar(5, 255, 255), mask1);
+    cv::inRange(img_hsv, cv::Scalar(175, 60, 60), cv::Scalar(180, 255, 255), mask2);
+
     // Merge the masks
     cv::bitwise_or(mask1, mask2, maskR);
 
     // HUE for YELLOW is 21-30.
     // Adjust Saturation and Value depending on the lighting condition of the environment
-    cv::inRange(img_hsv, cv::Scalar(10, 0, 0), cv::Scalar(50, 255, 255), maskY);
-    // cv::imshow("yellowMask", maskY);
-    // draw field numbers on mask for debug
+    cv::inRange(img_hsv, cv::Scalar(0, 70, 70), cv::Scalar(50, 255, 255), maskY);
+
     /*
+     * Debug for masks
+     *
+    // draw field numbers on masks for debug
     for (int i = 0; i < fields.size(); ++i) {
         std::ostringstream convert;
         convert << i;
-        cv::putText(maskR, convert.str(), cv::Point(fields[i].x - 20, fields[i].y - 20), cv::FONT_HERSHEY_DUPLEX, 0.2,
+        cv::putText(maskR, convert.str(), cv::Point(fields[i].x - 20, fields[i].y - 50), cv::FONT_HERSHEY_DUPLEX, 0.5,
                     125);
-        // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
+        cv::putText(maskY, convert.str(), cv::Point(fields[i].x - 20, fields[i].y - 50), cv::FONT_HERSHEY_DUPLEX, 0.5,
+                    125);
     }
-     */
+    // show masks
+    cv::imshow("yellowMask", maskY);
+    cv::imshow("redMask", maskR);
+    */
 }
 
 void MainWindow::insertCoins(cv::Mat cameraImage) {
@@ -212,6 +220,7 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
     int winner = 0;
     int fieldPosStart;
     int fieldPosEnd;
+
     // check horizontal spaces
     for (int y = 0; y < boardHeight; y++) {
         for (int x = 0; x < boardWidth - 3; x++) {
@@ -231,6 +240,7 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
             }
         }
     }
+
     // check vertical spaces
     for (int x = 0; x < boardWidth; x++) {
         for (int y = 0; y < boardHeight - 3; y++) {
@@ -250,6 +260,7 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
             }
         }
     }
+
     // check / diagonal spaces
     for (int x = 0; x < boardWidth - 3; x++) {
         for (int y = 3; y < boardHeight; y++) {
@@ -271,6 +282,7 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
             }
         }
     }
+
     // check \ diagonal spaces
     for (int x = 0; x < boardWidth - 3; x++) {
         for (int y = 0; y < boardHeight - 3; y++) {
@@ -348,15 +360,19 @@ void MainWindow::processSingleFrame() {
 
     // check if round has been won
     if (!roundWon) {
+
         // check if fields are calibrated
         if (arraySet == 0) {
             matchFields(cameraImage, cameraImage);
             arraySet = 1;
         }
+
         // detect coins
         colorDetection(cameraImage);
+
         // insert coins into 2d vector
         insertCoins(cameraImage);
+        
         // check for winner
         int winner = checkWin(cameraImage);
         if (winner == 1) {
