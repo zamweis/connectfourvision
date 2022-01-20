@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
     //mCameraStream.open(1);
-    mCameraStream = cv::VideoCapture("testvideo.mp4");
+    mCameraStream = cv::VideoCapture("testvideo2.mp4.mp4");
     start();
 
 }
@@ -122,8 +122,8 @@ void MainWindow::colorDetection(cv::Mat image) {
 
     // HUE for YELLOW is 21-30.
     // Adjust Saturation and Value depending on the lighting condition of the environment
-    cv::inRange(img_hsv, cv::Scalar(21, 190, 20), cv::Scalar(30, 255, 255), maskY);
-
+    cv::inRange(img_hsv, cv::Scalar(10, 0, 0), cv::Scalar(50, 255, 255), maskY);
+    // cv::imshow("yellowMask", maskY);
     // draw field numbers on mask for debug
     /*
     for (int i = 0; i < fields.size(); ++i) {
@@ -346,13 +346,7 @@ void MainWindow::processSingleFrame() {
 
     this->setCameraImage(cameraImage);
 
-    // hier müssen Sie Ihren code einbauen
-
     cv::Mat debugImage = cameraImage.clone();
-
-    // bearbeiten Sie das debug bild wie sie wollen;
-
-    // std::cout << fields << std::endl;
 
     // check if round has been won
     if (!roundWon) {
@@ -374,8 +368,9 @@ void MainWindow::processSingleFrame() {
             yellowRounds++;
             roundWon = true;
         }
-        // uncomment this to prevent stop when a team wins
-        // roundWon = false;
+
+        roundWon = false; // uncomment this to prevent stop when a team wins
+
         this->setDebugImage(cameraImage);
     } else {
         stop();
@@ -384,15 +379,9 @@ void MainWindow::processSingleFrame() {
         roundWon = false;
     }
 
-
     ui->label_red_rounds->setText("Red Rounds: " + QString::number(redRounds));
     ui->label_yellow_rounds->setText("Yellow Rounds: " + QString::number(yellowRounds));
 
-    // sie können auch rechtecke oder linien direkt ins bild reinmalden
-
-    // mSceneCamera.addItem(QGraphicsRectItem(...));
-
-    // darunter sollte nichts geändert werden
 
     qint64 elapsedTime = measureTime.elapsed();
 
@@ -433,6 +422,7 @@ void MainWindow::reset() {
     redRounds = 0;
     yellowRounds = 0;
     roundWon = false;
+    coins.clear();
     // print stats
     ui->label_red->setText("Red Coins: " + QString::number(redCoins));
     ui->label_yellow->setText("Yellow Coins: " + QString::number(yellowCoins));
