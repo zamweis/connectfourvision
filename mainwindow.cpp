@@ -12,6 +12,11 @@ std::vector<std::vector<int>> coins;
 int arraySet = 0;
 int redCoins = 0;
 int yellowCoins = 0;
+int yellowRounds = 0;
+int redRounds = 0;
+bool roundWon = false;
+
+cv::Mat maskR, maskY;
 
 // load templateImage
 cv::Mat templateImage = cv::imread("template.png", 0);
@@ -30,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton_start, SIGNAL(clicked()), this, SLOT(start()));
     connect(ui->pushButton_stop, SIGNAL(clicked()), this, SLOT(stop()));
     connect(ui->pushButton_step, SIGNAL(clicked()), this, SLOT(step()));
+    connect(ui->pushButton_reset, SIGNAL(clicked()), this, SLOT(reset()));
+    connect(ui->pushButton_calibrate, SIGNAL(clicked()), this, SLOT(calibrate()));
 
 
     ui->graphicsView_camera->setScene(&mSceneCamera);
@@ -91,7 +98,7 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
             cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
             // add matches to vector
             fields.push_back(cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius));
-            cv::circle(cameraImage, cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius), 40, (255, 255, 125), 4);
+            // cv::circle(cameraImage, cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius), 40, (255, 255, 125), 4);
         } else
             break;
     }
@@ -104,7 +111,7 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
 
 void MainWindow::colorDetection(cv::Mat image) {
     // convert image to hsv for better color-detection
-    cv::Mat img_hsv, maskR, maskY, mask1, mask2;
+    cv::Mat img_hsv, mask1, mask2;
     cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
     // Gen lower mask (0-5) and upper mask (175-180) of RED
     cv::inRange(img_hsv, cv::Scalar(0, 50, 20), cv::Scalar(5, 255, 255), mask1);
@@ -126,16 +133,16 @@ void MainWindow::colorDetection(cv::Mat image) {
         // cv::circle(maskR, cv::Point(fields[i].x, fields[i].y), 40, 125, 4);
     }
      */
-    insertCoins(maskR, maskY);
 }
 
-void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY) {
+void MainWindow::insertCoins(cv::Mat cameraImage) {
     // fill 2d-vector with coins
     int position = 41;
     coins.clear();
     coins.resize(6, std::vector<int>(7, 0));
     redCoins = 0;
     yellowCoins = 0;
+
     for (int j = 5; j >= 0; j--) {
         for (int i = 6; i >= 0; i--) {
 
@@ -146,10 +153,13 @@ void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY) {
                     // check if j the lowest level
                     coins[j][i] = 1;
                     redCoins++;
+                    cv::rectangle(cameraImage, cv::Rect(fields[position].x-coinRadius, fields[position].y-coinRadius, templateWidth, templateHeight), (255, 0, 0), 5);
+
                 } else if (j < 5 && coins[j + 1][i] != 0) {
                     // check if field underneath (j+1) has already a coin
                     coins[j][i] = 1;
                     redCoins++;
+                    cv::rectangle(cameraImage, cv::Rect(fields[position].x-coinRadius, fields[position].y-coinRadius, templateWidth, templateHeight), (255, 0, 0), 5);
                 }
             }
 
@@ -160,10 +170,12 @@ void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY) {
                     // check if j the lowest level
                     coins[j][i] = 2;
                     yellowCoins++;
+                    cv::rectangle(cameraImage, cv::Rect(fields[position].x-coinRadius, fields[position].y-coinRadius, templateWidth, templateHeight), (255, 255, 0), 5);
                 } else if (j < 5 && coins[j + 1][i] && coins[j][i] == 0) {
                     // check if field underneath (j+1) has already a coin
                     coins[j][i] = 2;
                     yellowCoins++;
+                    cv::rectangle(cameraImage, cv::Rect(fields[position].x-coinRadius, fields[position].y-coinRadius, templateWidth, templateHeight), (255, 255, 0), 5);
                 }
             }
             position--;
@@ -180,15 +192,15 @@ void MainWindow::insertCoins(cv::Mat maskR, cv::Mat maskY) {
     std::cout << std::endl;
 */
 
-    ui->label_yellow->setText(QString::number(yellowCoins) + " yellow coins set");
-    ui->label_red->setText(QString::number(redCoins) + " red coins set");
+    ui->label_red->setText("Red Coins: " + QString::number(redCoins));
+    ui->label_yellow->setText("Yellow Coins: " + QString::number(yellowCoins));
 }
 
 // return 0 if no win, 1 if red won, 2 if yellow won
 int MainWindow::checkWin() {
     int boardHeight = 6;
     int boardWidth = 7;
-    int winner=0;
+    int winner = 0;
 
     // check horizontal spaces
     for (int y = 0; y < boardHeight; y++) {
@@ -200,7 +212,7 @@ int MainWindow::checkWin() {
                     winner = 1;
                 } else if (coins[y][x] == 2) {
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
-                    winner =  2;
+                    winner = 2;
                 }
             }
         }
@@ -215,7 +227,7 @@ int MainWindow::checkWin() {
                     winner = 1;
                 } else if (coins[y][x] == 2) {
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
-                    winner =  2;
+                    winner = 2;
                 }
             }
         }
@@ -230,7 +242,7 @@ int MainWindow::checkWin() {
                     winner = 1;
                 } else if (coins[y][x] == 2) {
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
-                    winner =  2;
+                    winner = 2;
                 }
             }
         }
@@ -245,11 +257,12 @@ int MainWindow::checkWin() {
                     winner = 1;
                 } else if (coins[y][x] == 2) {
                     std::cout << "WINNRE WINNER, CHICKEN DINNER...YELLOW" << std::endl;
-                    winner =  2;
+                    winner = 2;
                 }
             }
         }
     }
+    if (winner != 0) roundWon = true;
     return winner;
 }
 
@@ -311,22 +324,35 @@ void MainWindow::processSingleFrame() {
 
     // std::cout << fields << std::endl;
 
-    // TODO: set matchFields() as calibration function and not for every frame with button
-    // TODO: implement resetButton
-    if (arraySet == 0) {
-        matchFields(cameraImage, cameraImage);
-        arraySet = 1;
+    // check if round has been won
+    if (!roundWon) {
+        // check if fields are calibrated
+        if (arraySet == 0) {
+            matchFields(cameraImage, cameraImage);
+            arraySet = 1;
+        }
+        // detect coins
+        colorDetection(cameraImage);
+        // insert coins into 2d vector
+        insertCoins(cameraImage);
+        // check for winner
+        int winner = checkWin();
+        if (winner == 1) {
+            redRounds++;
+            roundWon = true;
+        } else if (winner == 2) {
+            yellowRounds++;
+            roundWon = true;
+        }
+    } else{
+        stop();
+        ui->label_status->setText("Status: Round Won");
+        roundWon=false;
     }
 
-    colorDetection(cameraImage);
-    int winner = checkWin();
-    if (winner == 1) {
-        ui->label_yellow->setText("YELLOW LOST");
-        ui->label_red->setText("RED WIN");
-    } else if (winner == 2) {
-        ui->label_yellow->setText("RED LOST");
-        ui->label_red->setText("YELLOW WIN");
-    }
+
+    ui->label_red_rounds->setText("Red Rounds: " + QString::number(redRounds));
+    ui->label_yellow_rounds->setText("Yellow Rounds: " + QString::number(yellowRounds));
 
     this->setDebugImage(cameraImage);
     // sie können auch rechtecke oder linien direkt ins bild reinmalden
@@ -363,4 +389,43 @@ void MainWindow::step() {
     mTimer.singleShot(0, this, SLOT(processSingleFrame()));
     std::cout << "Single Step" << std::endl;
     ui->label_status->setText("Status: Single Step");
+}
+
+void MainWindow::reset() {
+    mTimer.stop();
+    std::cout << "Reset" << std::endl;
+    // reset stats
+    redCoins = 0;
+    yellowCoins = 0;
+    redRounds = 0;
+    yellowRounds = 0;
+    roundWon = false;
+    // print stats
+    ui->label_red->setText("Red Coins: " + QString::number(redCoins));
+    ui->label_yellow->setText("Yellow Coins: " + QString::number(yellowCoins));
+    ui->label_red_rounds->setText("Red Rounds: " + QString::number(redRounds));
+    ui->label_yellow_rounds->setText("Yellow Rounds: " + QString::number(yellowRounds));
+    ui->label_status->setText("Status: Reset");
+}
+
+void MainWindow::calibrate() {
+    mTimer.stop();
+    std::cout << "Calibrate" << std::endl;
+    ui->label_status->setText("Status: Calibrate");
+    cv::Mat cameraImage;
+    mCameraStream >> cameraImage;
+
+    // check if no coins are set
+    colorDetection(cameraImage);
+    insertCoins(cameraImage);
+    if (std::all_of(coins.begin(), coins.end(), [](const std::vector<int> &v) {
+        return std::all_of(v.begin(), v.end(), [](int x) { return x == 0; });
+    })) {
+        matchFields(cameraImage, cameraImage);
+        std::cout << "Calibrate Success" << std::endl;
+        start();
+    } else {
+        std::cout << "Please remove coins before calibrating" << std::endl;
+        std::cout << "Calibrate Failed" << std::endl;
+    }
 }

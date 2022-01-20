@@ -44,7 +44,7 @@ private:
     void setDebugImage(cv::Mat image);
     void colorDetection(cv::Mat image);
     void matchFields(cv::Mat debugImage, cv::Mat cameraImage);
-    void insertCoins(cv::Mat maskR, cv::Mat maskY);
+    void insertCoins(cv::Mat cameraImage);
     int checkWin();
 
 public slots:
@@ -54,6 +54,8 @@ public slots:
     void start();
     void stop();
     void step();
+    void reset();
+    void calibrate();
 
 };
 #endif // MAINWINDOW_H
