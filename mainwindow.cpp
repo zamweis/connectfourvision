@@ -372,7 +372,7 @@ void MainWindow::processSingleFrame() {
 
         // insert coins into 2d vector
         insertCoins(cameraImage);
-        
+
         // check for winner
         int winner = checkWin(cameraImage);
         if (winner == 1) {
