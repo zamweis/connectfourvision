@@ -83,7 +83,20 @@ void MainWindow::detectFields(cv::Mat debugImage) {
     cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 40,  // change this value to detect circles with different distances to each other
                      20, 25, 10, 50 // change the last two parameters to detect larger/smaller circles
     );
+    int avgRadius = 0;
+    // calculate average radius for better circle detection
+    for (size_t i = 0; i < circles.size() && i < 42; i++) {
+        cv::Vec3i c = circles[i];
+        avgRadius += c[2];
+    }
+
+    // find circles with avg radius
+    avgRadius = avgRadius / 42;
+    circles.clear();
     fieldWidth=0;
+    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, avgRadius,  // change this value to detect circles with different distances to each other
+                     20, 25, avgRadius-5, avgRadius+5 // change the last two parameters to detect larger/smaller circles
+    );
     for (size_t i = 0; i < circles.size() && i < 42; i++) {
         cv::Vec3i c = circles[i];
         cv::Point center = cv::Point(c[0], c[1]);
@@ -93,7 +106,7 @@ void MainWindow::detectFields(cv::Mat debugImage) {
         cv::circle(debugImage, center, radius, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
         fields.push_back(center);
     }
-    fieldWidth = fieldWidth / 21 + 4;
+    fieldWidth = fieldWidth / 21+4; // draw around fields
     // check if all fields were found
     if (fields.size() == 42) {
         // sort and respect inaccuracy
@@ -137,7 +150,7 @@ void MainWindow::colorDetection(cv::Mat image) {
     }
     */
     // show masks
-    cv::imshow("yellowMask", maskY);
+    //cv::imshow("yellowMask", maskY);
     //cv::imshow("redMask", maskR);
 }
 
