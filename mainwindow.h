@@ -43,7 +43,7 @@ private:
     void setCameraImage(cv::Mat image);
     void setDebugImage(cv::Mat image);
     void colorDetection(cv::Mat image);
-    void matchFields(cv::Mat debugImage);
+    void detectFields(cv::Mat debugImage);
     void insertCoins(cv::Mat cameraImage);
     int checkWin(cv::Mat cameraImage);
 

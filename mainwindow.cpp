@@ -72,7 +72,7 @@ struct sortY {
     }
 } sortFuncY;
 
-void MainWindow::matchFields(cv::Mat debugImage) {
+void MainWindow::detectFields(cv::Mat debugImage) {
 
     // empty vector
     fields.clear();
@@ -82,17 +82,14 @@ void MainWindow::matchFields(cv::Mat debugImage) {
     cv::medianBlur(gray, gray, 5);
 
     std::vector<cv::Vec3f> circles;
-    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 60,  // change this value to detect circles with different distances to each other
-                     20, 30, 20, 40 // change the last two parameters
-            // (min_radius & max_radius) to detect larger circles
+    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 50,  // change this value to detect circles with different distances to each other
+                     20, 25, 30, 50 // change the last two parameters to detect larger/smaller circles
     );
 
-    for (size_t i = 0; i < circles.size(); i++) {
+    for (size_t i = 0; i < circles.size() && i < 42; i++) {
         cv::Vec3i c = circles[i];
         cv::Point center = cv::Point(c[0], c[1]);
-        // circle center
-        cv::circle(debugImage, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-        // circle outline
+        // draw circle
         int radius = c[2];
         cv::circle(debugImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
         fields.push_back(center);
@@ -384,7 +381,7 @@ void MainWindow::processSingleFrame() {
 
             this->setDebugImage(cameraImage);
             // uncomment this to prevent stop when a team wins
-            // roundWon = false;
+            roundWon = false;
 
         } else {
             if (!roundEnd) {
@@ -472,7 +469,6 @@ void MainWindow::reset() {
 }
 
 void MainWindow::calibrate() {
-    std::cout << "Calibrate" << std::endl;
     ui->label_status->setText("Status: Calibrate");
     cv::Mat cameraImage;
     mCameraStream >> cameraImage;
@@ -484,14 +480,14 @@ void MainWindow::calibrate() {
         if (std::all_of(coins.begin(), coins.end(), [](const std::vector<int> &v) {
             return std::all_of(v.begin(), v.end(), [](int x) { return x == 0; });
         })) {
-            matchFields(cameraImage);
+            detectFields(cameraImage);
             std::cout << "Calibrate Success" << std::endl;
         } else {
             std::cout << "Please remove coins before calibrating" << std::endl;
             std::cout << "Calibrate Failed" << std::endl;
         }
     } else {
-        matchFields(cameraImage);
+        detectFields(cameraImage);
         if (fields.size() != 42) {
             std::cout << "Not all fields found: " << fields.size() << std::endl;
             std::cout << "Calibrate Failed" << std::endl;
