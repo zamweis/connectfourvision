@@ -58,18 +58,18 @@ MainWindow::~MainWindow() {
 }
 
 // use this to sort the points by x-value
-struct myclass {
+struct sortX {
     bool operator()(cv::Point pt1, cv::Point pt2) {
         return (pt1.x < pt2.x);
     }
-} myobject;
+} sortFuncX;
 
 // use this to sort the points by y-value
-struct myclass2 {
+struct sortY {
     bool operator()(cv::Point pt1, cv::Point pt2) {
         return pt1.y < pt2.y;
     }
-} myobject2;
+} sortFuncY;
 
 void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
 
@@ -106,9 +106,9 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
     // check if all fields were found
     if (fields.size() == 42) {
         // sort and respect inaccuracy
-        std::sort(fields.begin(), fields.end(), myobject2);
+        std::sort(fields.begin(), fields.end(), sortFuncY);
         for (int i = 0; i < 6; ++i) {
-            std::sort(fields.begin() + i * 7, fields.begin() + i * 7 + 7, myobject);
+            std::sort(fields.begin() + i * 7, fields.begin() + i * 7 + 7, sortFuncX);
         }
         fieldsMatched = true;
     } else {
