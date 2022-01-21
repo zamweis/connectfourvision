@@ -15,7 +15,7 @@ int yellowCoins = 0;
 int yellowRounds = 0;
 int redRounds = 0;
 bool roundWon = false;
-bool fieldsMatched = false;
+bool fieldsDetected = false;
 bool roundEnd = false;
 
 cv::Mat maskR, maskY;
@@ -44,8 +44,8 @@ MainWindow::MainWindow(QWidget *parent)
     mPixmapCamera = mSceneCamera.addPixmap(QPixmap());
     mPixmapDebug = mSceneDebug.addPixmap(QPixmap());
 
-    //wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
-    //mCameraStream.open(1);
+    // wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
+    // mCameraStream.open(1);
     mCameraStream = cv::VideoCapture("testvideo2.mp4");
     start();
     calibrate();
@@ -70,17 +70,17 @@ struct sortY {
     }
 } sortFuncY;
 
-void MainWindow::detectFields(cv::Mat debugImage) {
+void MainWindow::detectFields(cv::Mat image) {
 
     // empty vector
     fields.clear();
     circles.clear();
 
     cv::Mat gray;
-    cvtColor(debugImage, gray, cv::COLOR_BGR2GRAY);
+    cvtColor(image, gray, cv::COLOR_BGR2GRAY);
     cv::medianBlur(gray, gray, 5);
 
-    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 40,  // change this value to detect circles with different distances to each other
+    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 30,  // change this value to detect circles with different distances to each other
                      20, 25, 10, 50 // change the last two parameters to detect larger/smaller circles
     );
     int avgRadius = 0;
@@ -93,9 +93,10 @@ void MainWindow::detectFields(cv::Mat debugImage) {
     // find circles with avg radius
     avgRadius = avgRadius / 42;
     circles.clear();
-    fieldWidth=0;
-    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, avgRadius,  // change this value to detect circles with different distances to each other
-                     20, 25, avgRadius-5, avgRadius+5 // change the last two parameters to detect larger/smaller circles
+    fieldWidth = 0;
+    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1,
+                     avgRadius + 5,  // change this value to detect circles with different distances to each other
+                     20, 25, avgRadius - 5, avgRadius + 5 // change the last two parameters to detect larger/smaller circles
     );
     for (size_t i = 0; i < circles.size() && i < 42; i++) {
         cv::Vec3i c = circles[i];
@@ -103,10 +104,10 @@ void MainWindow::detectFields(cv::Mat debugImage) {
         // draw circle
         int radius = c[2];
         fieldWidth += radius;
-        cv::circle(debugImage, center, radius, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
+        cv::circle(image, center, radius, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
         fields.push_back(center);
     }
-    fieldWidth = fieldWidth / 21+4; // draw around fields
+    fieldWidth = fieldWidth / 21 + 4; // draw around fields
     // check if all fields were found
     if (fields.size() == 42) {
         // sort and respect inaccuracy
@@ -114,9 +115,9 @@ void MainWindow::detectFields(cv::Mat debugImage) {
         for (int i = 0; i < 6; ++i) {
             std::sort(fields.begin() + i * 7, fields.begin() + i * 7 + 7, sortFuncX);
         }
-        fieldsMatched = true;
+        fieldsDetected = true;
     } else {
-        fieldsMatched = false;
+        fieldsDetected = false;
     }
 }
 
@@ -135,28 +136,15 @@ void MainWindow::colorDetection(cv::Mat image) {
     // Adjust Saturation and Value depending on the lighting condition of the environment
     cv::inRange(img_hsv, cv::Scalar(10, 0, 0), cv::Scalar(35, 255, 255), maskY);
 
-
-    /*
-     * Debug for masks
-     *
-    // draw field numbers on masks for debug
-    for (int i = 0; i < fields.size(); ++i) {
-        std::ostringstream convert;
-        convert << i;
-        cv::putText(maskR, convert.str(), cv::Point(fields[i].x - 20, fields[i].y - 50), cv::FONT_HERSHEY_DUPLEX, 0.5,
-                    125);
-        cv::putText(maskY, convert.str(), cv::Point(fields[i].x - 20, fields[i].y - 50), cv::FONT_HERSHEY_DUPLEX, 0.5,
-                    125);
-    }
-    */
     // show masks
     //cv::imshow("yellowMask", maskY);
     //cv::imshow("redMask", maskR);
 }
 
-void MainWindow::insertCoins(cv::Mat cameraImage) {
+void MainWindow::insertCoins(cv::Mat image) {
     // check if field were all found
-    if (fieldsMatched) {
+    if (fieldsDetected) {
+
         // fill 2d-vector with coins
         int position = 41;
         coins.clear();
@@ -174,16 +162,16 @@ void MainWindow::insertCoins(cv::Mat cameraImage) {
                         // check if j the lowest level
                         coins[j][i] = 1;
                         redCoins++;
-                        cv::rectangle(cameraImage,
-                                      cv::Rect(fields[position].x - fieldWidth/2, fields[position].y - fieldWidth/2,
+                        cv::rectangle(image,
+                                      cv::Rect(fields[position].x - fieldWidth / 2, fields[position].y - fieldWidth / 2,
                                                fieldWidth, fieldWidth), CV_RGB(255, 0, 0), 2);
 
                     } else if (j < 5 && coins[j + 1][i] != 0) {
                         // check if field underneath (j+1) has already a coin
                         coins[j][i] = 1;
                         redCoins++;
-                        cv::rectangle(cameraImage,
-                                      cv::Rect(fields[position].x - fieldWidth/2, fields[position].y - fieldWidth/2,
+                        cv::rectangle(image,
+                                      cv::Rect(fields[position].x - fieldWidth / 2, fields[position].y - fieldWidth / 2,
                                                fieldWidth, fieldWidth), CV_RGB(255, 0, 0), 2);
                     }
                 }
@@ -195,15 +183,15 @@ void MainWindow::insertCoins(cv::Mat cameraImage) {
                         // check if j the lowest level
                         coins[j][i] = 2;
                         yellowCoins++;
-                        cv::rectangle(cameraImage,
-                                      cv::Rect(fields[position].x - fieldWidth/2, fields[position].y - fieldWidth/2,
+                        cv::rectangle(image,
+                                      cv::Rect(fields[position].x - fieldWidth / 2, fields[position].y - fieldWidth / 2,
                                                fieldWidth, fieldWidth), CV_RGB(255, 255, 0), 2);
                     } else if (j < 5 && coins[j + 1][i] && coins[j][i] == 0) {
                         // check if field underneath (j+1) has already a coin
                         coins[j][i] = 2;
                         yellowCoins++;
-                        cv::rectangle(cameraImage,
-                                      cv::Rect(fields[position].x - fieldWidth/2, fields[position].y - fieldWidth/2,
+                        cv::rectangle(image,
+                                      cv::Rect(fields[position].x - fieldWidth / 2, fields[position].y - fieldWidth / 2,
                                                fieldWidth, fieldWidth), CV_RGB(255, 255, 0), 2);
                     }
                 }
@@ -227,7 +215,7 @@ void MainWindow::insertCoins(cv::Mat cameraImage) {
 }
 
 // return 0 if no win, 1 if red won, 2 if yellow won
-int MainWindow::checkWin(cv::Mat cameraImage) {
+int MainWindow::checkWin(cv::Mat image) {
     int boardHeight = 6;
     int boardWidth = 7;
     int winner = 0;
@@ -242,11 +230,11 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
                 fieldPosStart = y * 7 + x;
                 fieldPosEnd = y * 7 + x + 3;
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                    cv::line(image, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
                              cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y), CV_RGB(255, 0, 0), 3);
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                    cv::line(image, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
                              cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y), CV_RGB(255, 255, 0), 3);
                     winner = 2;
                 }
@@ -262,11 +250,11 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
                 fieldPosStart = y * 7 + x;
                 fieldPosEnd = (y + 3) * 7 + x;
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                    cv::line(image, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
                              cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y), CV_RGB(255, 0, 0), 3);
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                    cv::line(image, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
                              cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y), CV_RGB(255, 255, 0), 3);
                     winner = 2;
                 }
@@ -282,12 +270,12 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
                 fieldPosStart = y * 7 + x;
                 fieldPosEnd = (y - 3) * 7 + x + 3;
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                    cv::line(image, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
                              cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y),
                              CV_RGB(255, 0, 0), 3);
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                    cv::line(image, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
                              cv::Point(fields[fieldPosEnd].x, fields[fieldPosEnd].y),
                              CV_RGB(255, 255, 0), 3);
                     winner = 2;
@@ -304,12 +292,12 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
                 fieldPosStart = y * 7 + x;
                 fieldPosEnd = (y + 3) * 7 + x + 3;
                 if (coins[y][x] == 1) {
-                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                    cv::line(image, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
                              cv::Point(fields[fieldPosEnd].x,
                                        fields[fieldPosEnd].y), CV_RGB(255, 0, 0), 3);
                     winner = 1;
                 } else if (coins[y][x] == 2) {
-                    cv::line(cameraImage, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
+                    cv::line(image, cv::Point(fields[fieldPosStart].x, fields[fieldPosStart].y),
                              cv::Point(fields[fieldPosEnd].x,
                                        fields[fieldPosEnd].y), CV_RGB(255, 255, 0), 3);
                     winner = 2;
@@ -371,7 +359,7 @@ void MainWindow::processSingleFrame() {
     this->setCameraImage(cameraImage);
 
     // check if fields are calibrated
-    if (fieldsMatched) {
+    if (fieldsDetected) {
 
         // check if round has been won
         if (!roundWon) {
@@ -394,15 +382,18 @@ void MainWindow::processSingleFrame() {
             for (size_t i = 0; i < circles.size() && i < 42; i++) {
                 cv::Vec3i c = circles[i];
                 cv::Point center = cv::Point(c[0], c[1]);
+
                 // draw circle
                 int radius = c[2];
                 std::ostringstream convert;
                 convert << i;
                 cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
-                cv::putText(cameraImage, convert.str(), cv::Point(fields[i].x - 10, fields[i].y + 5), cv::FONT_HERSHEY_DUPLEX, 0.6, cv::Scalar(255, 0, 255));
+                cv::putText(cameraImage, convert.str(), cv::Point(fields[i].x - 10, fields[i].y + 5), cv::FONT_HERSHEY_DUPLEX, 0.6,
+                            cv::Scalar(255, 0, 255));
                 fields.push_back(center);
             }
             this->setDebugImage(cameraImage);
+
             // uncomment this to prevent stop when a team wins
             roundWon = false;
 
@@ -428,7 +419,8 @@ void MainWindow::processSingleFrame() {
                     std::ostringstream convert;
                     convert << i;
                     cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
-                    cv::putText(cameraImage, convert.str(), cv::Point(fields[i].x - 10, fields[i].y + 5), cv::FONT_HERSHEY_DUPLEX, 0.6,cv::Scalar(255, 0, 255));
+                    cv::putText(cameraImage, convert.str(), cv::Point(fields[i].x - 10, fields[i].y + 5), cv::FONT_HERSHEY_DUPLEX, 0.6,
+                                cv::Scalar(255, 0, 255));
                     fields.push_back(center);
                 }
                 this->setDebugImage(cameraImage);
@@ -507,7 +499,7 @@ void MainWindow::calibrate() {
     cv::Mat cameraImage;
     mCameraStream >> cameraImage;
 
-    if (fieldsMatched) {
+    if (fieldsDetected) {
         // check if no coins are set
         colorDetection(cameraImage);
         insertCoins(cameraImage);
