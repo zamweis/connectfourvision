@@ -138,8 +138,8 @@ void MainWindow::colorDetection(cv::Mat image) {
     }
     */
     // show masks
-    cv::imshow("yellowMask", maskY);
-    cv::imshow("redMask", maskR);
+    //cv::imshow("yellowMask", maskY);
+    //cv::imshow("redMask", maskR);
 }
 
 void MainWindow::insertCoins(cv::Mat cameraImage) {
@@ -384,7 +384,10 @@ void MainWindow::processSingleFrame() {
                 cv::Point center = cv::Point(c[0], c[1]);
                 // draw circle
                 int radius = c[2];
+                std::ostringstream convert;
+                convert << i;
                 cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+                cv::putText(cameraImage, convert.str(),  cv::Point(fields[i].x - 20, fields[i].y+5), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 255));
                 fields.push_back(center);
             }
             this->setDebugImage(cameraImage);
@@ -410,7 +413,10 @@ void MainWindow::processSingleFrame() {
                     cv::Point center = cv::Point(c[0], c[1]);
                     // draw circle
                     int radius = c[2];
+                    std::ostringstream convert;
+                    convert << i;
                     cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+                    cv::putText(cameraImage, convert.str(),  cv::Point(fields[i].x - 20, fields[i].y+5), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 255));
                     fields.push_back(center);
                 }
                 this->setDebugImage(cameraImage);
