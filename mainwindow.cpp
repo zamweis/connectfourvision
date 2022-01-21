@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
     // mCameraStream.open(1);
-    mCameraStream = cv::VideoCapture("testvideo.mp4");
+    mCameraStream = cv::VideoCapture("testvideo3.mp4");
     start();
     calibrate();
 }
@@ -80,8 +80,8 @@ void MainWindow::detectFields(cv::Mat image) {
     cvtColor(image, gray, cv::COLOR_BGR2GRAY);
     cv::medianBlur(gray, gray, 5);
 
-    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 30,  // change this value to detect circles with different distances to each other
-                     20, 25, 10, 50 // change the last two parameters to detect larger/smaller circles
+    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 35,  // change this value to detect circles with different distances to each other
+                     20, 25, 20, 50 // change the last two parameters to detect larger/smaller circles
     );
     int avgRadius = 0;
     // calculate average radius for better circle detection
