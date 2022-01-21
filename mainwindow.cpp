@@ -9,13 +9,12 @@
 
 std::vector<cv::Point> fields;
 std::vector<std::vector<int>> coins;
-int arraySet = 0;
 int redCoins = 0;
 int yellowCoins = 0;
 int yellowRounds = 0;
 int redRounds = 0;
 bool roundWon = false;
-bool gameReady = false;
+bool fieldsMatched = false;
 
 cv::Mat maskR, maskY;
 
@@ -48,11 +47,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     //wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
     //mCameraStream.open(1);
-    mCameraStream.open(1);
-    mTimer.setInterval(ui->spinBox_loop->value());
-    mTimer.start();
-    std::cout << "Init" << std::endl;
-    ui->label_status->setText("Status: Initialize");
+    mCameraStream = cv::VideoCapture("testvideo2.mp4");
+    start();
+    calibrate();
 }
 
 
@@ -61,21 +58,20 @@ MainWindow::~MainWindow() {
 }
 
 // use this to sort the points by x-value
-struct sortX {
+struct myclass {
     bool operator()(cv::Point pt1, cv::Point pt2) {
         return (pt1.x < pt2.x);
     }
-} sortFuncX;
+} myobject;
 
 // use this to sort the points by y-value
-struct sortY {
+struct myclass2 {
     bool operator()(cv::Point pt1, cv::Point pt2) {
         return pt1.y < pt2.y;
     }
-} sortFuncY;
+} myobject2;
 
 void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
-    // std::cout << "matchFields" << std::endl;
 
     // empty vector
     fields.clear();
@@ -107,21 +103,21 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
         } else
             break;
     }
-    // check if enouth field were found
-    if (fields.size()==42){
+    // check if all fields were found
+    if (fields.size() == 42) {
         // sort and respect inaccuracy
-        std::sort(fields.begin(), fields.end(), sortFuncY);
+        std::sort(fields.begin(), fields.end(), myobject2);
         for (int i = 0; i < 6; ++i) {
-            std::sort(fields.begin() + i * 7, fields.begin() + i * 7 + 7, sortFuncX);
+            std::sort(fields.begin() + i * 7, fields.begin() + i * 7 + 7, myobject);
         }
+        fieldsMatched = true;
     } else {
-        std::cout << "setup board to begin" << std::endl;
+        fieldsMatched = false;
     }
-    std::cout << "fields found: " << fields.size() << std::endl;
+
 }
 
 void MainWindow::colorDetection(cv::Mat image) {
-    // std::cout << "colordetection" << std::endl;
     // convert image to hsv for better color-detection
     cv::Mat img_hsv, mask1, mask2;
     cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
@@ -155,16 +151,16 @@ void MainWindow::colorDetection(cv::Mat image) {
     */
 }
 
-int MainWindow::insertCoins(cv::Mat cameraImage) {
-    // std::cout << "insertCoins" << std::endl;
-    // fill 2d-vector with coins
-    int position = 41;
-    coins.clear();
-    coins.resize(6, std::vector<int>(7, 0));
-    redCoins = 0;
-    yellowCoins = 0;
+void MainWindow::insertCoins(cv::Mat cameraImage) {
+    // check if field were all found
+    if (fieldsMatched) {
+        // fill 2d-vector with coins
+        int position = 41;
+        coins.clear();
+        coins.resize(6, std::vector<int>(7, 0));
+        redCoins = 0;
+        yellowCoins = 0;
 
-    if (fields.size() == 42) {
         for (int j = 5; j >= 0; j--) {
             for (int i = 6; i >= 0; i--) {
 
@@ -211,7 +207,6 @@ int MainWindow::insertCoins(cv::Mat cameraImage) {
                 position--;
             }
         }
-
 /*
         // print coins vector
         for (int i = 0; i < 6; ++i) {
@@ -225,10 +220,6 @@ int MainWindow::insertCoins(cv::Mat cameraImage) {
 
         ui->label_red->setText("Red Coins: " + QString::number(redCoins));
         ui->label_yellow->setText("Yellow Coins: " + QString::number(yellowCoins));
-        return 1;
-    } else {
-        std::cout << "\tfields is empty" << std::endl;
-        return 0;
     }
 }
 
@@ -377,17 +368,12 @@ void MainWindow::processSingleFrame() {
 
     this->setCameraImage(cameraImage);
 
-    // check if gameIsReady
-    if (gameReady) {
+
+    // check if fields are calibrated
+    if (fieldsMatched) {
 
         // check if round has been won
         if (!roundWon) {
-
-            // check if fields are calibrated
-            if (arraySet == 0) {
-                matchFields(cameraImage, cameraImage);
-                arraySet = 1;
-            }
 
             // detect coins
             colorDetection(cameraImage);
@@ -415,7 +401,11 @@ void MainWindow::processSingleFrame() {
             ui->label_status->setText("Status: Round Won");
             roundWon = false;
         }
+    } else {
+        matchFields(cameraImage, cameraImage);
     }
+
+
     ui->label_red_rounds->setText("Red Rounds: " + QString::number(redRounds));
     ui->label_yellow_rounds->setText("Yellow Rounds: " + QString::number(yellowRounds));
 
@@ -431,16 +421,13 @@ void MainWindow::setLoopTime(int value) {
 }
 
 void MainWindow::start() {
-    if (gameReady) {
-        mTimer.setInterval(ui->spinBox_loop->value());
-        mTimer.start();
-        std::cout << "Start" << std::endl;
-        ui->label_status->setText("Status: Running");
-    }
+    mTimer.setInterval(ui->spinBox_loop->value());
+    mTimer.start();
+    std::cout << "Start" << std::endl;
+    ui->label_status->setText("Status: Running");
 }
 
 void MainWindow::stop() {
-    gameReady = false;
     mTimer.stop();
     std::cout << "Stop" << std::endl;
     ui->label_status->setText("Status: Stopped");
@@ -454,7 +441,6 @@ void MainWindow::step() {
 }
 
 void MainWindow::reset() {
-    gameReady = false;
     mTimer.stop();
     std::cout << "Reset" << std::endl;
     // reset stats
@@ -473,13 +459,12 @@ void MainWindow::reset() {
 }
 
 void MainWindow::calibrate() {
-    if (gameReady){
-        mTimer.stop();
-        std::cout << "Calibrate" << std::endl;
-        ui->label_status->setText("Status: Calibrate");
-        cv::Mat cameraImage;
-        mCameraStream >> cameraImage;
+    std::cout << "Calibrate" << std::endl;
+    ui->label_status->setText("Status: Calibrate");
+    cv::Mat cameraImage;
+    mCameraStream >> cameraImage;
 
+    if (fieldsMatched){
         // check if no coins are set
         colorDetection(cameraImage);
         insertCoins(cameraImage);
@@ -488,15 +473,17 @@ void MainWindow::calibrate() {
         })) {
             matchFields(cameraImage, cameraImage);
             std::cout << "Calibrate Success" << std::endl;
-            gameReady = true;
         } else {
             std::cout << "Please remove coins before calibrating" << std::endl;
             std::cout << "Calibrate Failed" << std::endl;
-            std::cout << "Keeping old data....resume" << std::endl;
         }
     } else{
-        cv::Mat cameraImage;
-        mCameraStream >> cameraImage;
         matchFields(cameraImage, cameraImage);
+        if (fields.size()!=42){
+            std::cout << "Not all fields found: " << fields.size() << std::endl;
+            std::cout << "Calibrate Failed" << std::endl;
+        } else{
+            std::cout << "Calibrate Success" << std::endl;
+        }
     }
 }
