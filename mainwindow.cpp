@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
     // mCameraStream.open(1);
-    mCameraStream = cv::VideoCapture("testvideo2.mp4");
+    mCameraStream = cv::VideoCapture("testvideo.mp4");
     start();
     calibrate();
 }
@@ -127,8 +127,8 @@ void MainWindow::colorDetection(cv::Mat image) {
     cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
 
     // Gen lower mask (0-5) and upper mask (175-180) of RED
-    cv::inRange(img_hsv, cv::Scalar(0, 0, 0), cv::Scalar(5, 255, 255), mask1);
-    cv::inRange(img_hsv, cv::Scalar(175, 0, 0), cv::Scalar(180, 255, 255), mask2);
+    cv::inRange(img_hsv, cv::Scalar(0, 20, 20), cv::Scalar(5, 255, 255), mask1);
+    cv::inRange(img_hsv, cv::Scalar(175, 20, 20), cv::Scalar(180, 255, 255), mask2);
     // Merge the masks
     cv::bitwise_or(mask1, mask2, maskR);
 
