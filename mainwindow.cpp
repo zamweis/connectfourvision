@@ -22,10 +22,7 @@ cv::Mat maskR, maskY;
 
 // load templateImage
 cv::Mat templateImage = cv::imread("template.png");
-int templateWidth = templateImage.cols;
-int templateHeight = templateImage.rows;
-int templateSize = ((templateWidth + templateHeight) / 4) * 2 + 1; //force size to be odd
-int coinRadius = templateSize / 2;
+int fieldWidth;
 
 MainWindow::MainWindow(QWidget *parent)
         : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -49,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
     //mCameraStream.open(1);
-    mCameraStream = cv::VideoCapture("testvideo.mp4");
+    mCameraStream = cv::VideoCapture("testvideo2.mp4");
     start();
     calibrate();
 }
@@ -83,18 +80,20 @@ void MainWindow::detectFields(cv::Mat debugImage) {
     cvtColor(debugImage, gray, cv::COLOR_BGR2GRAY);
     cv::medianBlur(gray, gray, 5);
 
-    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 50,  // change this value to detect circles with different distances to each other
-                     20, 25, 30, 50 // change the last two parameters to detect larger/smaller circles
+    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 40,  // change this value to detect circles with different distances to each other
+                     20, 25, 10, 50 // change the last two parameters to detect larger/smaller circles
     );
-
+    fieldWidth=0;
     for (size_t i = 0; i < circles.size() && i < 42; i++) {
         cv::Vec3i c = circles[i];
         cv::Point center = cv::Point(c[0], c[1]);
         // draw circle
         int radius = c[2];
-        cv::circle(debugImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+        fieldWidth += radius;
+        cv::circle(debugImage, center, radius, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
         fields.push_back(center);
     }
+    fieldWidth = fieldWidth / 21 + 4;
     // check if all fields were found
     if (fields.size() == 42) {
         // sort and respect inaccuracy
@@ -114,14 +113,14 @@ void MainWindow::colorDetection(cv::Mat image) {
     cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
 
     // Gen lower mask (0-5) and upper mask (175-180) of RED
-    cv::inRange(img_hsv, cv::Scalar(0, 50, 20), cv::Scalar(5, 255, 255), mask1);
-    cv::inRange(img_hsv, cv::Scalar(175, 50, 20), cv::Scalar(180, 255, 255), mask2);
+    cv::inRange(img_hsv, cv::Scalar(0, 0, 0), cv::Scalar(5, 255, 255), mask1);
+    cv::inRange(img_hsv, cv::Scalar(175, 0, 0), cv::Scalar(180, 255, 255), mask2);
     // Merge the masks
     cv::bitwise_or(mask1, mask2, maskR);
 
     // HUE for YELLOW is 21-30.
     // Adjust Saturation and Value depending on the lighting condition of the environment
-    cv::inRange(img_hsv, cv::Scalar(10, 0, 0), cv::Scalar(50, 255, 255), maskY);
+    cv::inRange(img_hsv, cv::Scalar(10, 0, 0), cv::Scalar(35, 255, 255), maskY);
 
 
     /*
@@ -138,7 +137,7 @@ void MainWindow::colorDetection(cv::Mat image) {
     }
     */
     // show masks
-    //cv::imshow("yellowMask", maskY);
+    cv::imshow("yellowMask", maskY);
     //cv::imshow("redMask", maskR);
 }
 
@@ -163,16 +162,16 @@ void MainWindow::insertCoins(cv::Mat cameraImage) {
                         coins[j][i] = 1;
                         redCoins++;
                         cv::rectangle(cameraImage,
-                                      cv::Rect(fields[position].x - coinRadius, fields[position].y - coinRadius,
-                                               templateWidth, templateHeight), CV_RGB(255, 0, 0), 5);
+                                      cv::Rect(fields[position].x - fieldWidth/2, fields[position].y - fieldWidth/2,
+                                               fieldWidth, fieldWidth), CV_RGB(255, 0, 0), 2);
 
                     } else if (j < 5 && coins[j + 1][i] != 0) {
                         // check if field underneath (j+1) has already a coin
                         coins[j][i] = 1;
                         redCoins++;
                         cv::rectangle(cameraImage,
-                                      cv::Rect(fields[position].x - coinRadius, fields[position].y - coinRadius,
-                                               templateWidth, templateHeight), CV_RGB(255, 0, 0), 5);
+                                      cv::Rect(fields[position].x - fieldWidth/2, fields[position].y - fieldWidth/2,
+                                               fieldWidth, fieldWidth), CV_RGB(255, 0, 0), 2);
                     }
                 }
 
@@ -184,15 +183,15 @@ void MainWindow::insertCoins(cv::Mat cameraImage) {
                         coins[j][i] = 2;
                         yellowCoins++;
                         cv::rectangle(cameraImage,
-                                      cv::Rect(fields[position].x - coinRadius, fields[position].y - coinRadius,
-                                               templateWidth, templateHeight), CV_RGB(255, 255, 0), 5);
+                                      cv::Rect(fields[position].x - fieldWidth/2, fields[position].y - fieldWidth/2,
+                                               fieldWidth, fieldWidth), CV_RGB(255, 255, 0), 2);
                     } else if (j < 5 && coins[j + 1][i] && coins[j][i] == 0) {
                         // check if field underneath (j+1) has already a coin
                         coins[j][i] = 2;
                         yellowCoins++;
                         cv::rectangle(cameraImage,
-                                      cv::Rect(fields[position].x - coinRadius, fields[position].y - coinRadius,
-                                               templateWidth, templateHeight), CV_RGB(255, 255, 0), 5);
+                                      cv::Rect(fields[position].x - fieldWidth/2, fields[position].y - fieldWidth/2,
+                                               fieldWidth, fieldWidth), CV_RGB(255, 255, 0), 2);
                     }
                 }
                 position--;
@@ -386,8 +385,8 @@ void MainWindow::processSingleFrame() {
                 int radius = c[2];
                 std::ostringstream convert;
                 convert << i;
-                cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
-                cv::putText(cameraImage, convert.str(),  cv::Point(fields[i].x - 20, fields[i].y+5), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 255));
+                cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
+                cv::putText(cameraImage, convert.str(), cv::Point(fields[i].x - 10, fields[i].y + 5), cv::FONT_HERSHEY_DUPLEX, 0.6, cv::Scalar(255, 0, 255));
                 fields.push_back(center);
             }
             this->setDebugImage(cameraImage);
@@ -415,8 +414,8 @@ void MainWindow::processSingleFrame() {
                     int radius = c[2];
                     std::ostringstream convert;
                     convert << i;
-                    cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
-                    cv::putText(cameraImage, convert.str(),  cv::Point(fields[i].x - 20, fields[i].y+5), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 255));
+                    cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
+                    cv::putText(cameraImage, convert.str(), cv::Point(fields[i].x - 10, fields[i].y + 5), cv::FONT_HERSHEY_DUPLEX, 0.6,cv::Scalar(255, 0, 255));
                     fields.push_back(center);
                 }
                 this->setDebugImage(cameraImage);
