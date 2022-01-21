@@ -20,7 +20,7 @@ bool roundEnd = false;
 cv::Mat maskR, maskY;
 
 // load templateImage
-cv::Mat templateImage = cv::imread("template.png", 0);
+cv::Mat templateImage = cv::imread("template.png");
 int templateWidth = templateImage.cols;
 int templateHeight = templateImage.rows;
 int templateSize = ((templateWidth + templateHeight) / 4) * 2 + 1; //force size to be odd
@@ -72,37 +72,30 @@ struct sortY {
     }
 } sortFuncY;
 
-void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
+void MainWindow::matchFields(cv::Mat debugImage) {
 
     // empty vector
     fields.clear();
 
-    // Apply template Matching
-    cv::Mat res_32f(debugImage.rows - templateHeight + 1, debugImage.cols - templateWidth + 1, CV_32FC1);
-    cv::cvtColor(debugImage, debugImage, cv::COLOR_BGR2GRAY);
+    cv::Mat gray;
+    cvtColor(debugImage, gray, cv::COLOR_BGR2GRAY);
+    cv::medianBlur(gray, gray, 5);
 
-    cv::matchTemplate(debugImage, templateImage, res_32f, cv::TM_CCOEFF_NORMED);
+    std::vector<cv::Vec3f> circles;
+    cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 60,  // change this value to detect circles with different distances to each other
+                     20, 30, 20, 40 // change the last two parameters
+            // (min_radius & max_radius) to detect larger circles
+    );
 
-    // Apply threshold
-    cv::Mat res;
-    res_32f.convertTo(res, CV_8U, 255.0);
-    cv::adaptiveThreshold(res, res, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, templateSize, -128);
-
-    // draw rectangle around matches and mark current match as drawn
-    while (true) {
-        double minval, maxval;
-        cv::Point minloc, maxloc;
-        cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
-
-        if (maxval > 0) {
-            // draw rectangle around fields for debug
-            // cv::rectangle(cameraImage, cv::Rect(maxloc.x, maxloc.y, templateWidth, templateHeight), CV_RGB(0, 255, 0),);
-            cv::floodFill(res, maxloc, 0); //mark drawn blob, important!
-
-            // add matches to vector
-            fields.push_back(cv::Point(maxloc.x + coinRadius, maxloc.y + coinRadius));
-        } else
-            break;
+    for (size_t i = 0; i < circles.size(); i++) {
+        cv::Vec3i c = circles[i];
+        cv::Point center = cv::Point(c[0], c[1]);
+        // circle center
+        cv::circle(debugImage, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+        // circle outline
+        int radius = c[2];
+        cv::circle(debugImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+        fields.push_back(center);
     }
     // check if all fields were found
     if (fields.size() == 42) {
@@ -115,7 +108,6 @@ void MainWindow::matchFields(cv::Mat debugImage, cv::Mat cameraImage) {
     } else {
         fieldsMatched = false;
     }
-
 }
 
 void MainWindow::colorDetection(cv::Mat image) {
@@ -368,7 +360,6 @@ void MainWindow::processSingleFrame() {
 
     this->setCameraImage(cameraImage);
 
-
     // check if fields are calibrated
     if (fieldsMatched) {
 
@@ -421,7 +412,7 @@ void MainWindow::processSingleFrame() {
                 }
             }
         }
-    } else{
+    } else {
         this->setDebugImage(cameraImage);
     }
 
@@ -441,8 +432,8 @@ void MainWindow::setLoopTime(int value) {
 }
 
 void MainWindow::start() {
-    roundEnd=false;
-    roundWon=false;
+    roundEnd = false;
+    roundWon = false;
     mTimer.setInterval(ui->spinBox_loop->value());
     mTimer.start();
     std::cout << "Start" << std::endl;
@@ -493,14 +484,14 @@ void MainWindow::calibrate() {
         if (std::all_of(coins.begin(), coins.end(), [](const std::vector<int> &v) {
             return std::all_of(v.begin(), v.end(), [](int x) { return x == 0; });
         })) {
-            matchFields(cameraImage, cameraImage);
+            matchFields(cameraImage);
             std::cout << "Calibrate Success" << std::endl;
         } else {
             std::cout << "Please remove coins before calibrating" << std::endl;
             std::cout << "Calibrate Failed" << std::endl;
         }
     } else {
-        matchFields(cameraImage, cameraImage);
+        matchFields(cameraImage);
         if (fields.size() != 42) {
             std::cout << "Not all fields found: " << fields.size() << std::endl;
             std::cout << "Calibrate Failed" << std::endl;
