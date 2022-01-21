@@ -9,6 +9,7 @@
 
 std::vector<cv::Point> fields;
 std::vector<std::vector<int>> coins;
+std::vector<cv::Vec3f> circles;
 int redCoins = 0;
 int yellowCoins = 0;
 int yellowRounds = 0;
@@ -48,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //wenn sie mehrere Kameras haben müssen Sie hier die Kamera mit einem anderen index wählen
     //mCameraStream.open(1);
-    mCameraStream = cv::VideoCapture("testvideo2.mp4");
+    mCameraStream = cv::VideoCapture("testvideo.mp4");
     start();
     calibrate();
 }
@@ -76,12 +77,12 @@ void MainWindow::detectFields(cv::Mat debugImage) {
 
     // empty vector
     fields.clear();
+    circles.clear();
 
     cv::Mat gray;
     cvtColor(debugImage, gray, cv::COLOR_BGR2GRAY);
     cv::medianBlur(gray, gray, 5);
 
-    std::vector<cv::Vec3f> circles;
     cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, 50,  // change this value to detect circles with different distances to each other
                      20, 25, 30, 50 // change the last two parameters to detect larger/smaller circles
     );
@@ -378,7 +379,14 @@ void MainWindow::processSingleFrame() {
                 yellowRounds++;
                 roundWon = true;
             }
-
+            for (size_t i = 0; i < circles.size() && i < 42; i++) {
+                cv::Vec3i c = circles[i];
+                cv::Point center = cv::Point(c[0], c[1]);
+                // draw circle
+                int radius = c[2];
+                cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+                fields.push_back(center);
+            }
             this->setDebugImage(cameraImage);
             // uncomment this to prevent stop when a team wins
             roundWon = false;
@@ -397,6 +405,14 @@ void MainWindow::processSingleFrame() {
                 // insert coins into 2d vector
                 insertCoins(cameraImage);
                 winner = checkWin(cameraImage);
+                for (size_t i = 0; i < circles.size() && i < 42; i++) {
+                    cv::Vec3i c = circles[i];
+                    cv::Point center = cv::Point(c[0], c[1]);
+                    // draw circle
+                    int radius = c[2];
+                    cv::circle(cameraImage, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+                    fields.push_back(center);
+                }
                 this->setDebugImage(cameraImage);
                 if (winner != 0) {
                     roundWon = true;
