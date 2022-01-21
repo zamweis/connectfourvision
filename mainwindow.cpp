@@ -114,15 +114,15 @@ void MainWindow::colorDetection(cv::Mat image) {
     cv::cvtColor(image, img_hsv, cv::COLOR_BGR2HSV);
 
     // Gen lower mask (0-5) and upper mask (175-180) of RED
-    cv::inRange(img_hsv, cv::Scalar(0, 60, 60), cv::Scalar(5, 255, 255), mask1);
-    cv::inRange(img_hsv, cv::Scalar(175, 60, 60), cv::Scalar(180, 255, 255), mask2);
-
+    cv::inRange(img_hsv, cv::Scalar(0, 50, 20), cv::Scalar(5, 255, 255), mask1);
+    cv::inRange(img_hsv, cv::Scalar(175, 50, 20), cv::Scalar(180, 255, 255), mask2);
     // Merge the masks
     cv::bitwise_or(mask1, mask2, maskR);
 
     // HUE for YELLOW is 21-30.
     // Adjust Saturation and Value depending on the lighting condition of the environment
-    cv::inRange(img_hsv, cv::Scalar(0, 70, 70), cv::Scalar(50, 255, 255), maskY);
+    cv::inRange(img_hsv, cv::Scalar(10, 0, 0), cv::Scalar(50, 255, 255), maskY);
+
 
     /*
      * Debug for masks
@@ -136,10 +136,10 @@ void MainWindow::colorDetection(cv::Mat image) {
         cv::putText(maskY, convert.str(), cv::Point(fields[i].x - 20, fields[i].y - 50), cv::FONT_HERSHEY_DUPLEX, 0.5,
                     125);
     }
+    */
     // show masks
     cv::imshow("yellowMask", maskY);
     cv::imshow("redMask", maskR);
-    */
 }
 
 void MainWindow::insertCoins(cv::Mat cameraImage) {
