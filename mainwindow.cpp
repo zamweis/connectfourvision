@@ -15,6 +15,7 @@ int yellowRounds = 0;
 int redRounds = 0;
 bool roundWon = false;
 bool fieldsMatched = false;
+bool roundEnd = false;
 
 cv::Mat maskR, maskY;
 
@@ -314,7 +315,6 @@ int MainWindow::checkWin(cv::Mat cameraImage) {
             }
         }
     }
-    if (winner != 0) std::cout << "WINNRE WINNER, CHICKEN DINNER" << std::endl;
     return winner;
 }
 
@@ -391,18 +391,38 @@ void MainWindow::processSingleFrame() {
                 roundWon = true;
             }
 
+            this->setDebugImage(cameraImage);
             // uncomment this to prevent stop when a team wins
             // roundWon = false;
 
-            this->setDebugImage(cameraImage);
         } else {
-            stop();
-            std::cout << "Empty field for next round and press start" << std::endl;
-            ui->label_status->setText("Status: Round Won");
-            roundWon = false;
+            if (!roundEnd) {
+                // check if still win for next 50 frames
+                int winner;
+                for (int i = 0; i < 50; ++i) {
+                    //get 10 more frames
+                    mCameraStream >> cameraImage;
+                }
+                // detect coins
+                colorDetection(cameraImage);
+
+                // insert coins into 2d vector
+                insertCoins(cameraImage);
+                winner = checkWin(cameraImage);
+                this->setDebugImage(cameraImage);
+                if (winner != 0) {
+                    roundWon = true;
+                    roundEnd = true;
+                    std::cout << "WINNRE WINNER, CHICKEN DINNER" << std::endl;
+                    std::cout << "Empty field for next round, calibrate and press start" << std::endl;
+                    ui->label_status->setText("Status: Round Over");
+                } else {
+                    roundWon = false;
+                }
+            }
         }
-    } else {
-        matchFields(cameraImage, cameraImage);
+    } else{
+        this->setDebugImage(cameraImage);
     }
 
 
@@ -421,6 +441,8 @@ void MainWindow::setLoopTime(int value) {
 }
 
 void MainWindow::start() {
+    roundEnd=false;
+    roundWon=false;
     mTimer.setInterval(ui->spinBox_loop->value());
     mTimer.start();
     std::cout << "Start" << std::endl;
@@ -464,7 +486,7 @@ void MainWindow::calibrate() {
     cv::Mat cameraImage;
     mCameraStream >> cameraImage;
 
-    if (fieldsMatched){
+    if (fieldsMatched) {
         // check if no coins are set
         colorDetection(cameraImage);
         insertCoins(cameraImage);
@@ -477,12 +499,12 @@ void MainWindow::calibrate() {
             std::cout << "Please remove coins before calibrating" << std::endl;
             std::cout << "Calibrate Failed" << std::endl;
         }
-    } else{
+    } else {
         matchFields(cameraImage, cameraImage);
-        if (fields.size()!=42){
+        if (fields.size() != 42) {
             std::cout << "Not all fields found: " << fields.size() << std::endl;
             std::cout << "Calibrate Failed" << std::endl;
-        } else{
+        } else {
             std::cout << "Calibrate Success" << std::endl;
         }
     }
