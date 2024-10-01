@@ -84,7 +84,7 @@ connectfourvision-main/
 
 Connect4Vision uses OpenCV to analyze video frames and detect the placement of pieces on the Connect Four board. The program tracks the state of the board and checks for winning conditions after every move. The following steps outline the core workflow:
 
-1. **Load Video**: The user selects a video file to analyze.
+1. **Load Video**: The user selects a video file to analyze or uses the camera directy.
 2. **Frame Analysis**: Each frame of the video is processed using OpenCV to detect piece placement.
 3. **Board Update**: The detected pieces are mapped onto the internal representation of the game board.
 4. **Win Check**: After each move, the program checks for any winning combinations.
